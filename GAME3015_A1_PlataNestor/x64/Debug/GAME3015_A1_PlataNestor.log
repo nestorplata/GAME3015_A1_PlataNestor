@@ -1,5 +1,1 @@
-﻿  World.cpp
-C:\Users\jecks\source\repos\DirectX\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\World.cpp(28,42): warning C4305: 'argument': truncation from 'double' to 'float'
-C:\Users\jecks\source\repos\DirectX\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\World.cpp(35,33): warning C4305: 'argument': truncation from 'double' to 'float'
-C:\Users\jecks\source\repos\DirectX\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\World.cpp(42,35): warning C4305: 'argument': truncation from 'double' to 'float'
-  GAME3015_A1_PlataNestor.vcxproj -> C:\Users\jecks\source\repos\DirectX\GAME3015_A1_PlataNestor\x64\Debug\GAME3015_A1_PlataNestor.exe
+﻿  GAME3015_A1_PlataNestor.vcxproj -> C:\Users\jecks\source\repos\DirectX\GAME3015_A1_PlataNestor\x64\Debug\GAME3015_A1_PlataNestor.exe
