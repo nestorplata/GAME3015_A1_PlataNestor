@@ -1,61 +1,23 @@
-﻿  Camera.cpp
-/Common/Camera.cpp(1,1): error C1083: Cannot open source file: '..\..\Common\Camera.cpp': No such file or directory
-  (compiling source file '/Common/Camera.cpp')
-  
+﻿  Aircraft.cpp
+C:\Users\jecks\source\repos\DirectX\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\Aircraft.cpp(30,52): warning C4267: '=': conversion from 'size_t' to 'UINT', possible loss of data
+  Camera.cpp
   d3dApp.cpp
-/Common/d3dApp.cpp(1,1): error C1083: Cannot open source file: '..\..\Common\d3dApp.cpp': No such file or directory
-  (compiling source file '/Common/d3dApp.cpp')
-  
   d3dUtil.cpp
-/Common/d3dUtil.cpp(1,1): error C1083: Cannot open source file: '..\..\Common\d3dUtil.cpp': No such file or directory
-  (compiling source file '/Common/d3dUtil.cpp')
-  
   DDSTextureLoader.cpp
-/Common/DDSTextureLoader.cpp(1,1): error C1083: Cannot open source file: '..\..\Common\DDSTextureLoader.cpp': No such file or directory
-  (compiling source file '/Common/DDSTextureLoader.cpp')
-  
   GameTimer.cpp
-/Common/GameTimer.cpp(1,1): error C1083: Cannot open source file: '..\..\Common\GameTimer.cpp': No such file or directory
-  (compiling source file '/Common/GameTimer.cpp')
-  
   GeometryGenerator.cpp
-/Common/GeometryGenerator.cpp(1,1): error C1083: Cannot open source file: '..\..\Common\GeometryGenerator.cpp': No such file or directory
-  (compiling source file '/Common/GeometryGenerator.cpp')
-  
   MathHelper.cpp
-/Common/MathHelper.cpp(1,1): error C1083: Cannot open source file: '..\..\Common\MathHelper.cpp': No such file or directory
-  (compiling source file '/Common/MathHelper.cpp')
-  
-  Aircraft.cpp
-C:\Users\Owner\Documents\GitHub\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\SceneNode.hpp(2,10): error C1083: Cannot open include file: '/Users/jecks/source/repos/DirectX/Common/d3dApp.h': No such file or directory
-  (compiling source file 'Aircraft.cpp')
-  
   Entity.cpp
-C:\Users\Owner\Documents\GitHub\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\SceneNode.hpp(2,10): error C1083: Cannot open include file: '/Users/jecks/source/repos/DirectX/Common/d3dApp.h': No such file or directory
-  (compiling source file 'Entity.cpp')
-  
   FrameResource.cpp
-C:\Users\Owner\Documents\GitHub\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\FrameResource.h(3,10): error C1083: Cannot open include file: '/Users/jecks/source/repos/DirectX/Common/d3dUtil.h': No such file or directory
-  (compiling source file 'FrameResource.cpp')
-  
   Game.cpp
-C:\Users\Owner\Documents\GitHub\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\SceneNode.hpp(2,10): error C1083: Cannot open include file: '/Users/jecks/source/repos/DirectX/Common/d3dApp.h': No such file or directory
-  (compiling source file 'Game.cpp')
-  
+C:\Users\jecks\source\repos\DirectX\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\Game.cpp(23,21): warning C4305: 'argument': truncation from 'double' to 'float'
   main.cpp
-C:\Users\Owner\Documents\GitHub\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\SceneNode.hpp(2,10): error C1083: Cannot open include file: '/Users/jecks/source/repos/DirectX/Common/d3dApp.h': No such file or directory
-  (compiling source file 'main.cpp')
-  
   SceneNode.cpp
-C:\Users\Owner\Documents\GitHub\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\SceneNode.hpp(2,10): error C1083: Cannot open include file: '/Users/jecks/source/repos/DirectX/Common/d3dApp.h': No such file or directory
-  (compiling source file 'SceneNode.cpp')
-  
   SpriteNode.cpp
-C:\Users\Owner\Documents\GitHub\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\SceneNode.hpp(2,10): error C1083: Cannot open include file: '/Users/jecks/source/repos/DirectX/Common/d3dApp.h': No such file or directory
-  (compiling source file 'SpriteNode.cpp')
-  
+C:\Users\jecks\source\repos\DirectX\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\SpriteNode.cpp(20,52): warning C4267: '=': conversion from 'size_t' to 'UINT', possible loss of data
   World.cpp
-C:\Users\Owner\Documents\GitHub\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\SceneNode.hpp(2,10): error C1083: Cannot open include file: '/Users/jecks/source/repos/DirectX/Common/d3dApp.h': No such file or directory
-  (compiling source file 'World.cpp')
-  
+C:\Users\jecks\source\repos\DirectX\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\World.cpp(28,34): warning C4305: 'argument': truncation from 'double' to 'float'
+C:\Users\jecks\source\repos\DirectX\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\World.cpp(35,27): warning C4305: 'argument': truncation from 'double' to 'float'
+C:\Users\jecks\source\repos\DirectX\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\World.cpp(42,29): warning C4305: 'argument': truncation from 'double' to 'float'
   Generating Code...
+  GAME3015_A1_PlataNestor.vcxproj -> C:\Users\jecks\source\repos\DirectX\GAME3015_A1_PlataNestor\x64\Debug\GAME3015_A1_PlataNestor.exe
