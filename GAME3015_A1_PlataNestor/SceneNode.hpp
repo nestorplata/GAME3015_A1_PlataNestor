@@ -1,9 +1,9 @@
 #pragma once
-#include "/Users/jecks/source/repos/DirectX/Common/d3dApp.h"
-#include "/Users/jecks/source/repos/DirectX/Common/MathHelper.h"
-#include "/Users/jecks/source/repos/DirectX/Common/UploadBuffer.h"
-#include "/Users/jecks/source/repos/DirectX/Common/GeometryGenerator.h"
-#include "/Users/jecks/source/repos/DirectX/Common/Camera.h"
+#include "Common/d3dApp.h"
+#include "Common/MathHelper.h"
+#include "Common/UploadBuffer.h"
+#include "Common/GeometryGenerator.h"
+#include "Common/Camera.h"
 #include "FrameResource.h"
 
 using Microsoft::WRL::ComPtr;
