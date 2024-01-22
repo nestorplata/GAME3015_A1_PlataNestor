@@ -1,4 +1,6 @@
 #include "World.hpp"
+#include <string>//
+#include <iostream>// to print to console
 
 World::World(Game* game)
 	: mSceneGraph(new SceneNode(game))
@@ -7,12 +9,31 @@ World::World(Game* game)
 	, mBackground(nullptr)
 	, mWorldBounds(-1.5f, 1.5f, 200.0f, 0.0f) //Left, Right, Down, Up
 	, mSpawnPosition(0.f, 0.f)
-	, mScrollSpeed(1.0f)
+	, mScrollSpeed(-1.0f)
+	, FloorLooptimer(0.0f)
+	, Floorloopcounter(0)
 {
 }
 
 void World::update(const GameTimer& gt)
 {
+	//FloorLooptimer = FloorLooptimer  + gt.DeltaTime();
+
+	 float bz = mBackground->getWorldPosition().z;
+	if (mBackground->getWorldPosition().z < -10.0f )
+	{
+		mBackground->setPosition(0, 0, 0);		
+		//FloorLooptimer = 0.0f;
+
+		Floorloopcounter = Floorloopcounter +1;
+		//std::cout << Floorloopcounter;
+		
+	}
+	else
+	{
+		mBackground->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
+		
+	}
 	mSceneGraph->update(gt);
 }
 
@@ -48,7 +69,7 @@ void World::buildScene()
 	mBackground = backgroundSprite.get();
 	//mBackground->setPosition(mWorldBounds.left, mWorldBounds.top);
 	mBackground->setPosition(0, 0, 0.0);
-	mBackground->setScale(10.0, 1.0, 200.0);
+	mBackground->setScale(50.0, 50.0, 100.0);
 	//mBackground->setVelocity(0, 0, -mScrollSpeed);
 	mSceneGraph->attachChild(std::move(backgroundSprite));
 

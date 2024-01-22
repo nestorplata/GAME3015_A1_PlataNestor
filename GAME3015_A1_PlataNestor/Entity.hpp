@@ -6,18 +6,18 @@ class Entity :
 {
 public:
 	Entity(Game* game);
-	void				setVelocity(XMFLOAT2 velocity);
-	void				setVelocity(float vx, float vy);
+	void				setVelocity(XMFLOAT3 velocity);
+	void				setVelocity(float vx, float vy, float vz);
 	void				setLife(float hp);
 	void				FireMissile();
-	XMFLOAT2			getVelocity() const;
+	XMFLOAT3			getVelocity() const;
 	void				getLife();
 
 
 	virtual	void		updateCurrent(const GameTimer& gt);
 
 public:
-	XMFLOAT2		mVelocity;
+	XMFLOAT3		mVelocity;
 	float			life;
 	bool			isFriendly;
 	bool			isMissileFired;

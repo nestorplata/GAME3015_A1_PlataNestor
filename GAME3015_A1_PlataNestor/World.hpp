@@ -35,4 +35,6 @@ private:
 	Aircraft*							mPlayerAircraft;
 	SpriteNode*							mBackground;
 	Aircraft*							mEnemy;
+	float                               FloorLooptimer; // add
+	int                              Floorloopcounter; // add
 };
