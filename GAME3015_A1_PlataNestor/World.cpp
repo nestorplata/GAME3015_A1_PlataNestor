@@ -10,29 +10,27 @@ World::World(Game* game)
 	, mWorldBounds(-1.5f, 1.5f, 200.0f, 0.0f) //Left, Right, Down, Up
 	, mSpawnPosition(0.f, 0.f)
 	, mScrollSpeed(-1.0f)
-	, FloorLooptimer(0.0f)
 	, Floorloopcounter(0)
 {
 }
 
 void World::update(const GameTimer& gt)
 {
-	//FloorLooptimer = FloorLooptimer  + gt.DeltaTime();
-
-	 float bz = mBackground->getWorldPosition().z;
+	// loop background
 	if (mBackground->getWorldPosition().z < -10.0f )
 	{
+		// place back  the mBackground to it's original position
 		mBackground->setPosition(0, 0, 0);		
-		//FloorLooptimer = 0.0f;
 
+		// tracking how many times it loop.
 		Floorloopcounter = Floorloopcounter +1;
-		//std::cout << Floorloopcounter;
+		//std::cout << "Floorloopcounter: "<< Floorloopcounter;
 		
 	}
 	else
 	{
+		// to move the background
 		mBackground->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
-		
 	}
 	mSceneGraph->update(gt);
 }
