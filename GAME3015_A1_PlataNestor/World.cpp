@@ -42,7 +42,7 @@ void World::OnPlayerInput(const GameTimer& gt)
 	const float dt = gt.DeltaTime();
 	float x = 0;
 	float z = 0;
-	float Speed = 50.0f;
+	float Speed = 100.0f;
 
 	if (GetAsyncKeyState('A') & 0x8000)
 	{
@@ -60,6 +60,12 @@ void World::OnPlayerInput(const GameTimer& gt)
 	if (GetAsyncKeyState('W') & 0x8000)
 	{
 		z += Speed;
+	}
+
+	if (abs(x) == abs(z) &&x!=0)
+	{
+		x *= 0.7071;
+		z *= 0.7071;
 	}
 	mPlayerAircraft->setVelocity(x*dt, 0, z*dt);
 
