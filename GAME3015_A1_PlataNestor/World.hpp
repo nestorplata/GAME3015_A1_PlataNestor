@@ -8,6 +8,7 @@ class World
 public:
 	explicit							World(Game* window);
 	void								update(const GameTimer& gt);
+	void								OnPlayerInput(const GameTimer& gt);
 	void								draw();
 
 	//void								loadTextures();

@@ -32,7 +32,37 @@ void World::update(const GameTimer& gt)
 		// to move the background
 		mBackground->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
 	}
+	OnPlayerInput(gt);
+
 	mSceneGraph->update(gt);
+}
+
+void World::OnPlayerInput(const GameTimer& gt)
+{
+	const float dt = gt.DeltaTime();
+	float x = 0;
+	float z = 0;
+	float Speed = 50.0f;
+
+	if (GetAsyncKeyState('A') & 0x8000)
+	{
+		x -= Speed;
+	}
+
+	if (GetAsyncKeyState('S') & 0x8000)
+	{
+		z -= Speed;
+	}
+	if (GetAsyncKeyState('D') & 0x8000)
+	{
+		x += Speed;
+	}
+	if (GetAsyncKeyState('W') & 0x8000)
+	{
+		z += Speed;
+	}
+	mPlayerAircraft->setVelocity(x*dt, 0, z*dt);
+
 }
 
 void World::draw()

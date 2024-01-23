@@ -15,6 +15,17 @@ void Entity::setVelocity(float vx, float vy, float vz)
 	mVelocity.y = vy;
 	mVelocity.z = vz;
 }
+void Entity::SetXSpeed(float vx)
+{
+	mVelocity.x = vx;
+}
+
+void Entity::SetZSpeed(float vz)
+{
+	mVelocity.x = vz;
+}
+
+
 
 XMFLOAT3 Entity::getVelocity() const
 {
