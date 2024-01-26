@@ -1,6 +1,7 @@
 #pragma once
 #include "SceneNode.hpp"
 #include "Aircraft.hpp"
+#include "AircraftShadow.hpp"
 #include "SpriteNode.h"
 
 class World 
@@ -36,5 +37,6 @@ private:
 	Aircraft*							mPlayerAircraft;
 	SpriteNode*							mBackground;
 	Aircraft*							mEnemy;
+	//AircraftShadow*                     m;// add 
 	int                              Floorloopcounter; // add  to know how many times it's been loop
 };

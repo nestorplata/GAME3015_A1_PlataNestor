@@ -1,25 +1,26 @@
 #pragma once
+#include "Aircraft.hpp"
 #include "Entity.hpp"
 #include <string>
 
-class Aircraft :
-    public Entity
+class AircraftShadow :
+	public Entity
 {
 public:
 	enum Type
-	{
-		Eagle,
-		Raptor
+	{	
+		RaptorShadow
 	};
 
 
 public:
-	Aircraft(Type type, Game* game);
+	AircraftShadow(Type type, Game* game);
 
 
 private:
 	virtual void		drawCurrent() const;
 	virtual void		buildCurrent();
+	virtual void		GetAirCraftPosition(Aircraft a, AircraftShadow as);
 
 
 private:

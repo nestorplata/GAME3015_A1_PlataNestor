@@ -32,6 +32,8 @@ void World::update(const GameTimer& gt)
 		// to move the background
 		mBackground->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
 	}
+
+	
 	OnPlayerInput(gt);
 
 	mSceneGraph->update(gt);
@@ -98,6 +100,23 @@ void World::buildScene()
 	raptor2->setScale(1.0, 1.0, 1.0);
 	raptor2->setWorldRotation(0, XM_PI, 0);
 	mPlayerAircraft->attachChild(std::move(enemy2));
+
+
+
+	//std::unique_ptr<AircraftShadow> raptorshadowtest(new AircraftShadow(AircraftShadow::RaptorShadow, mGame));
+	//auto raptorshadow = raptorshadowtest.get();
+	//raptorshadow->setPosition(0.6, 0.0, 1);
+	//raptorshadow->setScale(0.5, 0.5, 1.0);
+	//raptorshadow->setWorldRotation(0, XM_PI, 0);
+	//mPlayerAircraft->attachChild(std::move(raptorshadowtest));
+	//
+
+	//std::unique_ptr<AircraftShadow> raptorshadowtest2(new AircraftShadow(AircraftShadow::RaptorShadow, mGame));
+	//auto raptorshadow2 = raptorshadowtest2.get();
+	//raptorshadow2->setPosition(-0.6, 0.0, 1);
+	//raptorshadow2->setScale(0.5, 0.5, 1.0);
+	//raptorshadow2->setWorldRotation(0, XM_PI, 0);
+	//mPlayerAircraft->attachChild(std::move(raptorshadowtest2));
 
 	std::unique_ptr<SpriteNode> backgroundSprite(new SpriteNode(mGame));
 	mBackground = backgroundSprite.get();

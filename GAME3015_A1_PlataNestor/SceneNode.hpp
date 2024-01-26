@@ -65,6 +65,11 @@ public:
 	void					draw() const;
 	void					build();
 
+	float				    getWorldPositionZ();// get Z
+	float				    getWorldPositionY();// get Y
+	float				    getWorldPositionX();// get X
+	
+
 	XMFLOAT3				getWorldPosition() const;
 	void					setPosition(float x, float y, float z);
 	XMFLOAT3				getWorldRotation() const;
