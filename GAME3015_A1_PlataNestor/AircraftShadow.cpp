@@ -6,6 +6,11 @@ AircraftShadow::AircraftShadow(Type type, Game* game) : Entity(game)
 {
 	switch (type)
 	{
+	case (EagleShadow):
+		mSprite = "EagleShadow";
+		break;
+	case (RaptorShadow):
+		mSprite = "RaptorShadow";
 	default:
 		mSprite = "RaptorShadow";
 		break;

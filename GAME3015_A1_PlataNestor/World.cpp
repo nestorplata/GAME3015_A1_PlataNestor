@@ -92,8 +92,8 @@ void World::OnPlayerInput(const GameTimer& gt)
 		x *= 0.7071;
 		z *= 0.7071;
 	}
-	mPlayerAircraft->setVelocity(x*dt, 0, z*dt);
-
+	mPlayerAircraft->setVelocity(x * dt, 0, z * dt);
+	mPlayerAircraftShadow->setVelocity(x * dt, 0, z * dt);
 }
 
 void World::draw()
@@ -134,12 +134,25 @@ void World::buildScene()
 	mPlayerAircraft->attachChild(std::move(raptorshadowtest));
 	
 
+	
+
 	std::unique_ptr<AircraftShadow> raptorshadowtest2(new AircraftShadow(AircraftShadow::RaptorShadow, mGame));
 	auto raptorshadow2 = raptorshadowtest2.get();
 	raptorshadow2->setPosition(-0.6, 0.0, 1);
 	raptorshadow2->setScale(0.5, 0.5, 1.0);
 	raptorshadow2->setWorldRotation(0, XM_PI, 0);
 	mPlayerAircraft->attachChild(std::move(raptorshadowtest2));
+
+
+
+	std::unique_ptr<AircraftShadow> Eagleshadowtest1(new AircraftShadow(AircraftShadow::EagleShadow, mGame));
+	mPlayerAircraftShadow = Eagleshadowtest1.get();
+	mPlayerAircraftShadow->setPosition(0.0, -0.01, -0.5);
+	mPlayerAircraftShadow->setScale(0.5, 0.5, 0.5);
+	mPlayerAircraftShadow->setWorldRotation(0, 0, 0);
+	//mPlayerAircraft->attachChild(std::move(Eagleshadowtest1));
+	mPlayerAircraft->attachChild(std::move(Eagleshadowtest1));
+	
 
 	std::unique_ptr<SpriteNode> backgroundSprite(new SpriteNode(mGame));
 	mBackground = backgroundSprite.get();

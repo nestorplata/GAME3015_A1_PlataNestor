@@ -383,6 +383,16 @@ void Game::LoadTextures()
 		RaptorShadowTex->Resource, RaptorShadowTex->UploadHeap));
 
 	mTextures[RaptorShadowTex->Name] = std::move(RaptorShadowTex);
+
+	//RapShadow
+	auto EagleShadowTex = std::make_unique<Texture>();
+	EagleShadowTex->Name = "EagleShadowTex";
+	EagleShadowTex->Filename = L"Media/Textures/EagleShadow1.dds";
+	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+		mCommandList.Get(), EagleShadowTex->Filename.c_str(),
+		EagleShadowTex->Resource, EagleShadowTex->UploadHeap));
+
+	mTextures[EagleShadowTex->Name] = std::move(EagleShadowTex);
 }
 
 void Game::BuildRootSignature()
@@ -435,7 +445,7 @@ void Game::BuildDescriptorHeaps()
 	// Create the SRV heap.
 	//
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.NumDescriptors = 4;/// was a 3
+	srvHeapDesc.NumDescriptors = 5;/// was a 3
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mSrvDescriptorHeap)));
@@ -449,6 +459,7 @@ void Game::BuildDescriptorHeaps()
 	auto RaptorTex = mTextures["RaptorTex"]->Resource;
 	auto DesertTex = mTextures["DesertTex"]->Resource;
 	auto RaptorShadowTex = mTextures["RaptorShadowTex"]->Resource;
+	auto EagleShadowTex = mTextures["EagleShadowTex"]->Resource;
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 
@@ -488,6 +499,11 @@ void Game::BuildDescriptorHeaps()
 	hDescriptor.Offset(1, mCbvSrvDescriptorSize);
 	srvDesc.Format = RaptorShadowTex->GetDesc().Format;
 	md3dDevice->CreateShaderResourceView(RaptorShadowTex.Get(), &srvDesc, hDescriptor);
+	
+	//// EagleShadowTex
+	hDescriptor.Offset(1, mCbvSrvDescriptorSize);
+	srvDesc.Format = EagleShadowTex->GetDesc().Format;
+	md3dDevice->CreateShaderResourceView(EagleShadowTex.Get(), &srvDesc, hDescriptor);
 
 }
 
@@ -639,6 +655,16 @@ void Game::BuildMaterials()
 	RaptorShadow->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
 	RaptorShadow->Roughness = 0.2f;
 	mMaterials["RaptorShadow"] = std::move(RaptorShadow);
+
+	// add
+	auto EagleShadow = std::make_unique<Material>();
+	EagleShadow->Name = "EagleShadow";
+	EagleShadow->MatCBIndex = 4;
+	EagleShadow->DiffuseSrvHeapIndex = 4;
+	EagleShadow->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	EagleShadow->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
+	EagleShadow->Roughness = 0.2f;
+	mMaterials["EagleShadow"] = std::move(EagleShadow);
 
 }
 

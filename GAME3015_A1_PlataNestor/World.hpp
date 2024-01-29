@@ -37,6 +37,6 @@ private:
 	Aircraft*							mPlayerAircraft;
 	SpriteNode*							mBackground;
 	Aircraft*							mEnemy;
-	//AircraftShadow*                     m;// add 
+	AircraftShadow*                     mPlayerAircraftShadow;// add 
 	int                              Floorloopcounter; // add  to know how many times it's been loop
 };

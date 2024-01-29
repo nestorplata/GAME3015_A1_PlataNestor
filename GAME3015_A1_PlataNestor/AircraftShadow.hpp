@@ -8,7 +8,8 @@ class AircraftShadow :
 {
 public:
 	enum Type
-	{	
+	{
+		EagleShadow,
 		RaptorShadow
 	};
 
