@@ -36,7 +36,9 @@ private:
 	float								mScrollSpeed;
 	Aircraft*							mPlayerAircraft;
 	SpriteNode*							mBackground;
-	Aircraft*							mEnemy;
+	Aircraft*							mRaptor1;
+	Aircraft*							mRaptor2;
+
 	AircraftShadow*                     mPlayerAircraftShadow;// add 
 	int                              Floorloopcounter; // add  to know how many times it's been loop
 };
