@@ -1,0 +1,2 @@
+RaptorLimitXBounds: 2.00032
+ IsRaptorLimitX: 0

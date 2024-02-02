@@ -16,15 +16,19 @@ AircraftShadow::AircraftShadow(Type type, Game* game) : Entity(game)
 		break;
 	}
 }
+//AircraftShadow::AircraftShadow() : Entity(game)
+//{
+//	
+//}
 
 void AircraftShadow::drawCurrent() const
 {
 }
 
-void AircraftShadow::GetAirCraftPosition(Aircraft a, AircraftShadow as)
-{
-	as.setPosition(a.getWorldPositionX(), a.getWorldPositionY(), a.getWorldPositionZ());
-}
+//void AircraftShadow::GetAirCraftPosition(Aircraft a, AircraftShadow as)
+//{
+//	as.setPosition(a.getWorldPositionX(), a.getWorldPositionY(), a.getWorldPositionZ());
+//}
 
 void AircraftShadow::buildCurrent()
 {

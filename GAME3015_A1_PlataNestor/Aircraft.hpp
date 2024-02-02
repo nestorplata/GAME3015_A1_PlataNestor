@@ -1,5 +1,6 @@
 #pragma once
 #include "Entity.hpp"
+#include "AircraftShadow.hpp"
 #include <string>
 
 class Aircraft :
@@ -17,9 +18,11 @@ public:
 	Aircraft(Type type, Game* game);
 
 
+
 private:
 	virtual void		drawCurrent() const;
 	virtual void		buildCurrent();
+	AircraftShadow* mPlayerAircraftShadow;// add 
 
 
 private:

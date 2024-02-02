@@ -1,5 +1,4 @@
 #pragma once
-#include "Aircraft.hpp"
 #include "Entity.hpp"
 #include <string>
 
@@ -16,12 +15,13 @@ public:
 
 public:
 	AircraftShadow(Type type, Game* game);
+	//AircraftShadow();
 
 
 private:
 	virtual void		drawCurrent() const;
 	virtual void		buildCurrent();
-	virtual void		GetAirCraftPosition(Aircraft a, AircraftShadow as);
+	//virtual void		GetAirCraftPosition(Aircraft a, AircraftShadow as);
 
 
 private:
