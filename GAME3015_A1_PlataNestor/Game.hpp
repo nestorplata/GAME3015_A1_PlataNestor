@@ -1,5 +1,13 @@
 #include "World.hpp"
 
+// add 4 sky
+enum class RenderLayer : int
+{
+	Opaque = 0,
+	Sky,
+	Count
+};
+
 class Game : public D3DApp
 {
 public:
@@ -67,9 +75,16 @@ private:
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
 
 	ComPtr<ID3D12PipelineState> mOpaquePSO = nullptr;
+	//std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mPSOs; // add 4 sky
 
 	// List of all the render items.
 	std::vector<std::unique_ptr<RenderItem>> mAllRitems;
+
+	// Render items divided by PSO. add 4 sky
+	//std::vector<RenderItem*> mRitemLayer[(int)RenderLayer::Count];
+
+
+	//UINT mSkyTexHeapIndex = 0;// add 4 sky
 
 	// Render items divided by PSO.
 	std::vector<RenderItem*> mOpaqueRitems;
@@ -93,3 +108,4 @@ public:
 	std::unordered_map<std::string, std::unique_ptr<Material>>& getMaterials() { return mMaterials; }
 	std::unordered_map<std::string, std::unique_ptr<MeshGeometry>>& getGeometries() { return mGeometries; }
 };
+

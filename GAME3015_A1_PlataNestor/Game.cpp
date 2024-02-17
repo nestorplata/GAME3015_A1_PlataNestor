@@ -99,7 +99,8 @@ void Game::Draw(const GameTimer& gt)
 
 	// A command list can be reset after it has been added to the command queue via ExecuteCommandList.
 	// Reusing the command list reuses memory.
-	ThrowIfFailed(mCommandList->Reset(cmdListAlloc.Get(), mOpaquePSO.Get()));
+	ThrowIfFailed(mCommandList->Reset(cmdListAlloc.Get(), mOpaquePSO.Get())); // change 4 sky
+	//ThrowIfFailed(mCommandList->Reset(cmdListAlloc.Get(), mPSOs["opaque"].Get())); // add 4 sky
 
 	//mScreenViewport.TopLeftX = 0.0f;
 	//mScreenViewport.TopLeftY = 0.0f;
@@ -128,8 +129,36 @@ void Game::Draw(const GameTimer& gt)
 	auto passCB = mCurrFrameResource->PassCB->Resource();
 	mCommandList->SetGraphicsRootConstantBufferView(2, passCB->GetGPUVirtualAddress());
 
+    // add 4 sky
+	// Bind all the materials used in this scene.  For structured buffers, we can bypass the heap and 
+	// set as a root descriptor.
+	//auto matBuffer = mCurrFrameResource->MaterialBuffer->Resource(); // add MaterialBuffer to add frameResource
+	//mCommandList->SetGraphicsRootShaderResourceView(2, matBuffer->GetGPUVirtualAddress());
+
+	// add 4 sky
+	// step4: Bind the sky cube map.  For our demos, we just use one "world" cube map representing the environment
+	// from far away, so all objects will use the same cube map and we only need to set it once per-frame.  
+	// If we wanted to use "local" cube maps, we would have to change them per-object, or dynamically
+	// index into an array of cube maps.
+
+	/*CD3DX12_GPU_DESCRIPTOR_HANDLE skyTexDescriptor(mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+	skyTexDescriptor.Offset(mSkyTexHeapIndex, mCbvSrvDescriptorSize);
+	mCommandList->SetGraphicsRootDescriptorTable(3, skyTexDescriptor);*/
+
+	// add 4 sky
+	// Bind all the textures used in this scene.  Observe
+   // that we only have to specify the first descriptor in the table.  
+  // The root signature knows how many descriptors are expected in the table.
+	//mCommandList->SetGraphicsRootDescriptorTable(4, mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+
+
 	mWorld.draw();
 	DrawRenderItems(mCommandList.Get(), mOpaqueRitems);
+
+	// add 4 sky
+	//mCommandList->SetPipelineState(mPSOs["sky"].Get());
+	// add 4 sky
+	//DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Sky]);
 
 	// Indicate a state transition on the resource usage.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
@@ -307,6 +336,7 @@ void Game::UpdateMaterialCBs(const GameTimer& gt)
 	}
 }
 
+
 void Game::UpdateMainPassCB(const GameTimer& gt)
 {
 	XMMATRIX view = mCamera.GetView();
@@ -384,7 +414,7 @@ void Game::LoadTextures()
 
 	mTextures[RaptorShadowTex->Name] = std::move(RaptorShadowTex);
 
-	//RapShadow
+	// EagleShadow
 	auto EagleShadowTex = std::make_unique<Texture>();
 	EagleShadowTex->Name = "EagleShadowTex";
 	EagleShadowTex->Filename = L"Media/Textures/EagleShadow1.dds";
@@ -393,6 +423,16 @@ void Game::LoadTextures()
 		EagleShadowTex->Resource, EagleShadowTex->UploadHeap));
 
 	mTextures[EagleShadowTex->Name] = std::move(EagleShadowTex);
+
+	//add 4 sky
+	/*auto skyCubeMapTex = std::make_unique<Texture>();
+	skyCubeMapTex->Name = "skyCubeMapTex";
+	skyCubeMapTex->Filename = L"Media/Textures/grasscube1024.dds";
+	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+		mCommandList.Get(), skyCubeMapTex->Filename.c_str(),
+		skyCubeMapTex->Resource, skyCubeMapTex->UploadHeap));
+
+	mTextures[skyCubeMapTex->Name] = std::move(skyCubeMapTex);*/
 }
 
 void Game::BuildRootSignature()
@@ -445,7 +485,7 @@ void Game::BuildDescriptorHeaps()
 	// Create the SRV heap.
 	//
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.NumDescriptors = 5;/// was a 3
+	srvHeapDesc.NumDescriptors = 5;/// was a 3, was a 5
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mSrvDescriptorHeap)));
@@ -460,6 +500,7 @@ void Game::BuildDescriptorHeaps()
 	auto DesertTex = mTextures["DesertTex"]->Resource;
 	auto RaptorShadowTex = mTextures["RaptorShadowTex"]->Resource;
 	auto EagleShadowTex = mTextures["EagleShadowTex"]->Resource;
+	//auto skyCubeMapTex = mTextures["skyCubeMapTex"]->Resource; // add 4 sky
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 
@@ -505,6 +546,17 @@ void Game::BuildDescriptorHeaps()
 	srvDesc.Format = EagleShadowTex->GetDesc().Format;
 	md3dDevice->CreateShaderResourceView(EagleShadowTex.Get(), &srvDesc, hDescriptor);
 
+	//// skyCubeMapTexTex, add 4 sky
+	//hDescriptor.Offset(1, mCbvSrvDescriptorSize);
+	//srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+	//srvDesc.TextureCube.MostDetailedMip = 0;
+	//srvDesc.TextureCube.MipLevels = skyCubeMapTex->GetDesc().MipLevels;
+	//srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+	//srvDesc.Format = skyCubeMapTex->GetDesc().Format;
+	//md3dDevice->CreateShaderResourceView(skyCubeMapTex.Get(), &srvDesc, hDescriptor);
+
+	//mSkyTexHeapIndex = 3;
+
 }
 
 void Game::BuildShadersAndInputLayout()
@@ -512,6 +564,10 @@ void Game::BuildShadersAndInputLayout()
 
 	mShaders["standardVS"] = d3dUtil::CompileShader(L"Shaders/Default.hlsl", nullptr, "VS", "vs_5_1");
 	mShaders["opaquePS"] = d3dUtil::CompileShader(L"Shaders/Default.hlsl", nullptr, "PS", "ps_5_1");
+
+	// add 4 sky
+	//mShaders["skyVS"] = d3dUtil::CompileShader(L"Shaders\\Sky.hlsl", nullptr, "VS", "vs_5_1");// add 4 sky
+	//mShaders["skyPS"] = d3dUtil::CompileShader(L"Shaders\\Sky.hlsl", nullptr, "PS", "ps_5_1");// add 4 sky
 
 	mInputLayout =
 	{
@@ -602,7 +658,34 @@ void Game::BuildPSOs()
 	opaquePsoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
 	opaquePsoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
 	opaquePsoDesc.DSVFormat = mDepthStencilFormat;
-	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaquePsoDesc, IID_PPV_ARGS(&mOpaquePSO)));
+	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaquePsoDesc, IID_PPV_ARGS(&mOpaquePSO))); // change 4 sky
+	//ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaquePsoDesc, IID_PPV_ARGS(&mPSOs["opaque"]))); // add 4 sky
+
+// add 4 sky
+//
+// step5: PSO for sky.
+////
+//	D3D12_GRAPHICS_PIPELINE_STATE_DESC skyPsoDesc = opaquePsoDesc;
+//
+//	// The camera is inside the sky sphere, so just turn off culling.
+//	skyPsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+//
+//	// Make sure the depth function is LESS_EQUAL and not just LESS.  
+//	// Otherwise, the normalized depth values at z = 1 (NDC) will 
+//	// fail the depth test if the depth buffer was cleared to 1.
+//	skyPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+//	skyPsoDesc.pRootSignature = mRootSignature.Get();
+//	skyPsoDesc.VS =
+//	{
+//		reinterpret_cast<BYTE*>(mShaders["skyVS"]->GetBufferPointer()),
+//		mShaders["skyVS"]->GetBufferSize()
+//	};
+//	skyPsoDesc.PS =
+//	{
+//		reinterpret_cast<BYTE*>(mShaders["skyPS"]->GetBufferPointer()),
+//		mShaders["skyPS"]->GetBufferSize()
+//	};
+//	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&skyPsoDesc, IID_PPV_ARGS(&mPSOs["sky"])));
 }
 
 void Game::BuildFrameResources()
@@ -666,15 +749,39 @@ void Game::BuildMaterials()
 	EagleShadow->Roughness = 0.2f;
 	mMaterials["EagleShadow"] = std::move(EagleShadow);
 
+	// add 4 sky
+	//auto sky = std::make_unique<Material>();
+	//sky->Name = "sky";
+	//sky->MatCBIndex = 5;
+	//sky->DiffuseSrvHeapIndex = 5;
+	//sky->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	//sky->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
+	//sky->Roughness = 1.0f;
+	//mMaterials["sky"] = std::move(sky);
 }
 
 void Game::BuildRenderItems()
 {
 	mWorld.buildScene();
 
-	// All the render items are opaque.
+	 //All the render items are opaque.
 	for (auto& e : mAllRitems)
 		mOpaqueRitems.push_back(e.get());
+
+
+	//auto skyRitem = std::make_unique<RenderItem>();
+	//XMStoreFloat4x4(&skyRitem->World, XMMatrixScaling(5000.0f, 5000.0f, 5000.0f));
+	//skyRitem->TexTransform = MathHelper::Identity4x4();
+	//skyRitem->ObjCBIndex = 0;
+	//skyRitem->Mat = mMaterials["sky"].get();
+	//skyRitem->Geo = mGeometries["shapeGeo"].get();
+	//skyRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	//skyRitem->IndexCount = skyRitem->Geo->DrawArgs["sphere"].IndexCount;
+	//skyRitem->StartIndexLocation = skyRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
+	//skyRitem->BaseVertexLocation = skyRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
+
+	//mRitemLayer[(int)RenderLayer::Sky].push_back(skyRitem.get());
+	//mAllRitems.push_back(std::move(skyRitem));
 }
 
 void Game::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems)

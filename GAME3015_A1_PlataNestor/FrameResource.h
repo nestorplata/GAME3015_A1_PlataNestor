@@ -8,6 +8,10 @@ struct ObjectConstants
 {
     DirectX::XMFLOAT4X4 World = MathHelper::Identity4x4();
 	DirectX::XMFLOAT4X4 TexTransform = MathHelper::Identity4x4();
+  //  UINT     MaterialIndex; // add 4 sky
+  //  UINT     ObjPad0;// add 4 sky
+  //  UINT     ObjPad1;// add 4 sky
+  //  UINT     ObjPad2;// add 4 sky
 };
 
 struct PassConstants
@@ -35,6 +39,22 @@ struct PassConstants
     // are spot lights for a maximum of MaxLights per object.
     Light Lights[MaxLights];
 };
+
+// add 4 shadow
+//struct MaterialData
+//{
+//    DirectX::XMFLOAT4 DiffuseAlbedo = { 1.0f, 1.0f, 1.0f, 1.0f };// add 4 shadow
+//    DirectX::XMFLOAT3 FresnelR0 = { 0.01f, 0.01f, 0.01f };// add 4 shadow
+//    float Roughness = 0.5f;// add 4 shadow
+//
+//    // Used in texture mapping.
+//    DirectX::XMFLOAT4X4 MatTransform = MathHelper::Identity4x4();// add 4 shadow
+//
+//    //UINT DiffuseMapIndex = 0;// add 4 shadow
+//   // UINT MaterialPad0;// add 4 shadow
+//   // UINT MaterialPad1;// add 4 shadow
+//   // UINT MaterialPad2;// add 4 shadow
+//};
 
 struct Vertex
 {
@@ -64,6 +84,7 @@ public:
    // std::unique_ptr<UploadBuffer<FrameConstants>> FrameCB = nullptr;
     std::unique_ptr<UploadBuffer<PassConstants>> PassCB = nullptr;
     std::unique_ptr<UploadBuffer<MaterialConstants>> MaterialCB = nullptr;
+  //  std::unique_ptr<UploadBuffer<MaterialData>> MaterialBuffer = nullptr;// add 4 sky
     std::unique_ptr<UploadBuffer<ObjectConstants>> ObjectCB = nullptr;
 
     // Fence value to mark commands up to this fence point.  This lets us
