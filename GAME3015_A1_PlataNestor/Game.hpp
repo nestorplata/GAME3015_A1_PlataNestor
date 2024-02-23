@@ -47,7 +47,7 @@ private:
 	void BuildFrameResources();
 	void BuildMaterials();
 	void BuildRenderItems();
-	void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems);
+	//void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems);
 
 	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
 
@@ -107,5 +107,10 @@ public:
 	std::vector<std::unique_ptr<RenderItem>>& getRenderItems() { return mAllRitems; }
 	std::unordered_map<std::string, std::unique_ptr<Material>>& getMaterials() { return mMaterials; }
 	std::unordered_map<std::string, std::unique_ptr<MeshGeometry>>& getGeometries() { return mGeometries; }
+	std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> GetPSOs() { return mPSOs; }//  add 4 draw in scene node
+	FrameResource* getFrameResource() { return mCurrFrameResource; }//  add 4 draw in scene node
+
+	ComPtr<ID3D12DescriptorHeap> getmSrvDescriptorHeap() { return mSrvDescriptorHeap; }//  add 4 draw in scene node
+	UINT GetmCbvSrvDescriptorSize() { return mCbvSrvDescriptorSize; }// add 4 draw in scene node
 };
 
