@@ -75,7 +75,7 @@ private:
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
 
 	ComPtr<ID3D12PipelineState> mOpaquePSO = nullptr;
-	//std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mPSOs; // add 4 sky
+	std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mPSOs; // add 4 sky
 
 	// List of all the render items.
 	std::vector<std::unique_ptr<RenderItem>> mAllRitems;
