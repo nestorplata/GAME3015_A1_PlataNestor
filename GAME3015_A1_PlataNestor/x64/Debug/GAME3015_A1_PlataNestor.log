@@ -1,3 +1,34 @@
-﻿  Game.cpp
+﻿  Aircraft.cpp
+C:\Users\Owner\Documents\GitHub\hsalamat_GameEngineDevelopment2\GAME3015_A1_PlataNestorFold\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\Aircraft.cpp(31,96): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\Owner\Documents\GitHub\hsalamat_GameEngineDevelopment2\GAME3015_A1_PlataNestorFold\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\Aircraft.cpp(31,70): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\Owner\Documents\GitHub\hsalamat_GameEngineDevelopment2\GAME3015_A1_PlataNestorFold\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\Aircraft.cpp(31,51): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\Owner\Documents\GitHub\hsalamat_GameEngineDevelopment2\GAME3015_A1_PlataNestorFold\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\Aircraft.cpp(73,52): warning C4267: '=': conversion from 'size_t' to 'UINT', possible loss of data
+  AircraftShadow.cpp
+C:\Users\Owner\Documents\GitHub\hsalamat_GameEngineDevelopment2\GAME3015_A1_PlataNestorFold\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\AircraftShadow.cpp(67,52): warning C4267: '=': conversion from 'size_t' to 'UINT', possible loss of data
+  Command.cpp
+  CommandQueue.cpp
+C:\Users\Owner\Documents\GitHub\hsalamat_GameEngineDevelopment2\GAME3015_A1_PlataNestorFold\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\CommandQueue.cpp(6,10): warning C4067: unexpected tokens following preprocessor directive - expected a newline
+  Camera.cpp
+  d3dApp.cpp
+  d3dUtil.cpp
+  DDSTextureLoader.cpp
+  GameTimer.cpp
+  GeometryGenerator.cpp
+  MathHelper.cpp
+  Entity.cpp
+  FrameResource.cpp
+  Game.cpp
 C:\Users\Owner\Documents\GitHub\hsalamat_GameEngineDevelopment2\GAME3015_A1_PlataNestorFold\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\Game.cpp(23,21): warning C4305: 'argument': truncation from 'double' to 'float'
+  main.cpp
+  Player.cpp
+  SceneNode.cpp
+  SpriteNode.cpp
+C:\Users\Owner\Documents\GitHub\hsalamat_GameEngineDevelopment2\GAME3015_A1_PlataNestorFold\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\SpriteNode.cpp(51,52): warning C4267: '=': conversion from 'size_t' to 'UINT', possible loss of data
+  World.cpp
+C:\Users\Owner\Documents\GitHub\hsalamat_GameEngineDevelopment2\GAME3015_A1_PlataNestorFold\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\World.cpp(104,14): warning C4305: '*=': truncation from 'double' to 'float'
+C:\Users\Owner\Documents\GitHub\hsalamat_GameEngineDevelopment2\GAME3015_A1_PlataNestorFold\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\World.cpp(105,14): warning C4305: '*=': truncation from 'double' to 'float'
+C:\Users\Owner\Documents\GitHub\hsalamat_GameEngineDevelopment2\GAME3015_A1_PlataNestorFold\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\World.cpp(123,34): warning C4305: 'argument': truncation from 'double' to 'float'
+C:\Users\Owner\Documents\GitHub\hsalamat_GameEngineDevelopment2\GAME3015_A1_PlataNestorFold\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\World.cpp(130,29): warning C4305: 'argument': truncation from 'double' to 'float'
+C:\Users\Owner\Documents\GitHub\hsalamat_GameEngineDevelopment2\GAME3015_A1_PlataNestorFold\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\World.cpp(137,30): warning C4305: 'argument': truncation from 'double' to 'float'
+  Generating Code...
   GAME3015_A1_PlataNestor.vcxproj -> C:\Users\Owner\Documents\GitHub\hsalamat_GameEngineDevelopment2\GAME3015_A1_PlataNestorFold\GAME3015_A1_PlataNestor\x64\Debug\GAME3015_A1_PlataNestor.exe

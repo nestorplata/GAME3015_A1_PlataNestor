@@ -1,6 +1,10 @@
 #include "SceneNode.hpp"
 #include "Game.hpp"
 
+#include "Command.h"// add it for input
+#include <algorithm>// add it for input
+#include <cassert>// add it for input
+
 SceneNode::SceneNode(Game* game)
 	: mChildren()
 	, mParent(nullptr)
@@ -161,4 +165,22 @@ void SceneNode::move(float x, float y, float z)
 	mWorldPosition.x += x;
 	mWorldPosition.y += y;
 	mWorldPosition.z += z;
+}
+
+// add it for it input
+//make sure Command.hpp is included!
+void SceneNode::onCommand(const Command& command)
+{
+	// Command current node, if category matches
+	if (command.category & getCategory())
+		command.action(*this);
+
+	// Command children
+	for (Ptr& child : mChildren)
+		child->onCommand(command);
+}
+
+unsigned int SceneNode::getCategory() const
+{
+	return Category::Scene;
 }

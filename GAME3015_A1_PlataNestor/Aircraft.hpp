@@ -17,7 +17,7 @@ public:
 public:
 	Aircraft(Type type, Game* game);
 
-
+	virtual unsigned int	getCategory() const;
 
 private:
 	virtual void		drawCurrent() const;

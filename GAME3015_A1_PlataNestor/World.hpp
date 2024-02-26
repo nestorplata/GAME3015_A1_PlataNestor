@@ -4,6 +4,8 @@
 #include "Aircraft.hpp"
 #include "AircraftShadow.hpp"
 #include "SpriteNode.h"
+#include "CommandQueue.h"// add it for input
+#include "Command.h"// add it for input
 
 class World 
 {
@@ -16,7 +18,7 @@ public:
 
 	//void								loadTextures();
 	void								buildScene();
-
+	CommandQueue&                       getCommandQueue(); /// add it for input
 
 private:
 	enum Layer
@@ -45,5 +47,6 @@ private:
 	bool                             IsRaptorOneLimitX, IsRaptorTwoLimitX; // use control the enemie planes
 	float                            Raptor1_X , Raptor2_X;// used store the x value ememy air planes
 	std::ofstream                         myfile; // used as text console / debug
+	CommandQueue						    mCommandQueue;// add it for input
 
 };

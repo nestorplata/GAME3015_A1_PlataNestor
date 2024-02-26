@@ -82,3 +82,19 @@ void Aircraft::buildCurrent()
 
 	
 }
+
+/// <summary>
+/// add it for input
+/// </summary>
+/// <returns></returns>
+unsigned int Aircraft::getCategory() const
+{
+	switch (mType)
+	{
+	case Eagle:
+		return Category::PlayerAircraft;
+
+	default:
+		return Category::EnemyAircraft;
+	}
+}
