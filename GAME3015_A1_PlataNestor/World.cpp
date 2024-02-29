@@ -16,23 +16,65 @@ World::World(Game* game)
 	, Floorloopcounter(0)
 	, IsRaptorOneLimitX(false)
 	, IsRaptorTwoLimitX(false)
-	, Raptor1_X( 0.0)
+	, Raptor1_X(0.0)
 	, Raptor2_X(0.0)
 {
+}
+// add it for input
+CommandQueue& World::getCommandQueue()
+{
+	return mCommandQueue;
 }
 
 void World::update(const GameTimer& gt)
 {
+	const float dt = gt.DeltaTime();
+
+	mPlayerAircraft->setVelocity(0.0f,0.0f,0.0f);
+	// add it for unput
+	while (!mCommandQueue.isEmpty())
+
+	{
+		mSceneGraph->onCommand(mCommandQueue.pop(), dt);
+
+	}
+	//mPlayerAircraft->accelerate(0.0f, 0.0f, 0.0f);
+
+
+	//Keep player's position inside the screen bounds, at least borderDistance units from the border
+	XMFLOAT3 position = mPlayerAircraft->getWorldPosition();
+
+	if (position.x < -1.0)
+	{
+		position.x = -1.0f;
+	}
+	else if (position.x > 1.0)
+	{
+		position.x = 1.0f;
+	}
+	else if (position.z < -0.9)
+	{
+		position.z = -0.9f;
+	}
+	else if (position.z > 0.9)
+	{
+		position.z = 0.9f;
+	}
+
+	mPlayerAircraft->setPosition(position.x,position.y,position.z);
+
+
+
 	// loop background
-	if (mBackground->getWorldPosition().z < -10.0f )
+	if (mBackground->getWorldPosition().z < -10.0f)
 	{
 		// place back  the mBackground to it's original position
-		mBackground->setPosition(0, 0, 0);		
+		mBackground->setPosition(0, 0, 0);
 
 		// tracking how many times it loop.
-		Floorloopcounter = Floorloopcounter +1;
+		Floorloopcounter = Floorloopcounter + 1;
 		//std::cout << "Floorloopcounter: "<< Floorloopcounter;
-		
+
 	}
 	else
 	{
@@ -40,76 +82,76 @@ void World::update(const GameTimer& gt)
 		mBackground->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
 	}
 
-	
+
 	/*float playerWPX = mPlayerAircraft->getWorldPositionX();
 	float playerWPY = mPlayerAircraft->getWorldPositionY();
 	float PlayerWPZ = mPlayerAircraft->getWorldPositionY();*/
-	
+
 	//std::ofstream myfile;
 	//myfile.open("example.txt");
 	//myfile << "dicks\n";
 	//myfile.close();
-	
 
-	OnPlayerInput(gt);
-	
+
+	//OnPlayerInput(gt);
+
 
 	mSceneGraph->update(gt);
 	MoveRaptorSideToSide(gt);
 }
 
-void World::OnPlayerInput(const GameTimer& gt)
-{
-	const float dt = gt.DeltaTime();
-	float x = 0;
-	float z = 0;
-	float Speed = 500.0f;
-
-	if (GetAsyncKeyState('A') & 0x8000)
-	{
-		if (mPlayerAircraft->getWorldPositionX() >= -1.0)
-		{
-			x -= Speed;
-		}
-	}
-
-	if (GetAsyncKeyState('S') & 0x8000)
-	{
-		if (mPlayerAircraft->getWorldPositionZ() >= -0.9)
-		{
-			z -= Speed;
-		}
-	}
-	if (GetAsyncKeyState('D') & 0x8000)
-	{
-		if (mPlayerAircraft->getWorldPositionX() <= 1.0)
-		{
-			x += Speed;
-		}
-	}
-	if (GetAsyncKeyState('W') & 0x8000)
-	{
-		//
-		if (mPlayerAircraft->getWorldPositionZ() <= 0.9)
-		{
-			z += Speed;
-		}
-		/*float PlayerWPZ = mPlayerAircraft->getWorldPositionZ();
-		float playerWPX = mPlayerAircraft->getWorldPositionX();
-		float playerWPY = mPlayerAircraft->getWorldPositionY();*/
-	}
-
-	if (abs(x) == abs(z) &&x!=0)
-	{
-		x *= 0.7071;
-		z *= 0.7071;
-	}
-	mPlayerAircraft->setVelocity(x * dt, 0, z * dt);
-
-	//mRaptor2->setVelocity(x * dt, 0, z * dt);
-	//mRaptor1->setVelocity(x * dt, 0, z * dt);
-	//mPlayerAircraftShadow->setVelocity(x * dt, 0, z * dt);
-}
+//void World::OnPlayerInput(const GameTimer& gt)
+//{
+//	const float dt = gt.DeltaTime();
+//	float x = 0;
+//	float z = 0;
+//	float Speed = 500.0f;
+//
+//	if (GetAsyncKeyState('A') & 0x8000)
+//	{
+//		if (mPlayerAircraft->getWorldPositionX() >= -1.0)
+//		{
+//			x -= Speed;
+//		}
+//	}
+//
+//	if (GetAsyncKeyState('S') & 0x8000)
+//	{
+//		if (mPlayerAircraft->getWorldPositionZ() >= -0.9)
+//		{
+//			z -= Speed;
+//		}
+//	}
+//	if (GetAsyncKeyState('D') & 0x8000)
+//	{
+//		if (mPlayerAircraft->getWorldPositionX() <= 1.0)
+//		{
+//			x += Speed;
+//		}
+//	}
+//	if (GetAsyncKeyState('W') & 0x8000)
+//	{
+//		
+//		if (mPlayerAircraft->getWorldPositionZ() <= 0.9)
+//		{
+//			z += Speed;
+//		}
+//		/*float PlayerWPZ = mPlayerAircraft->getWorldPositionZ();
+//		float playerWPX = mPlayerAircraft->getWorldPositionX();
+//		float playerWPY = mPlayerAircraft->getWorldPositionY();*/
+//	}
+//
+//	if (abs(x) == abs(z) &&x!=0)
+//	{
+//		x *= 0.7071;
+//		z *= 0.7071;
+//	}
+//	mPlayerAircraft->setVelocity(x * dt, 0, z * dt);
+//
+//	mRaptor2->setVelocity(x * dt, 0, z * dt);
+//	mRaptor1->setVelocity(x * dt, 0, z * dt);
+//	mPlayerAircraftShadow->setVelocity(x * dt, 0, z * dt);
+//}
 
 void World::draw()
 {
@@ -147,9 +189,9 @@ void World::buildScene()
 	//raptorshadow->setScale(0.5, 0.5, 1.0);
 	//raptorshadow->setWorldRotation(0, 0, 0);
 	//mRaptor1->attachChild(std::move(raptorshadowtest));
-	
 
-	
+
+
 
 	//std::unique_ptr<AircraftShadow> raptorshadowtest2(new AircraftShadow(AircraftShadow::RaptorShadow, mGame));
 	//auto raptorshadow2 = raptorshadowtest2.get();
@@ -167,7 +209,7 @@ void World::buildScene()
 	////mPlayerAircraftShadow->setWorldRotation(0, 0, 0);
 	////mPlayerAircraft->attachChild(std::move(Eagleshadowtest1));
 	//mPlayerAircraft->attachChild(std::move(Eagleshadowtest1));
-	
+
 
 	std::unique_ptr<SpriteNode> backgroundSprite(new SpriteNode(mGame));
 	mBackground = backgroundSprite.get();
@@ -196,7 +238,7 @@ void World::MoveRaptorSideToSide(const GameTimer& gt)
 	float Speed = 100.0f;
 
 	// first ememy air place
-	if ( IsRaptorOneLimitX == false )
+	if (IsRaptorOneLimitX == false)
 	{
 		x_Raptor1 -= Speed;
 
@@ -207,12 +249,12 @@ void World::MoveRaptorSideToSide(const GameTimer& gt)
 			myfile << "RaptorLimitXBounds: " << Raptor1_X << "\n";
 			myfile << " IsRaptorOneLimitX: " << IsRaptorOneLimitX;
 			myfile.close();*/
-		}	
+		}
 	}
-	else if (IsRaptorOneLimitX == true )
+	else if (IsRaptorOneLimitX == true)
 	{
 		x_Raptor1 += Speed;
-		if (Raptor1_X > 2.0  &&IsRaptorOneLimitX != false)
+		if (Raptor1_X > 2.0 && IsRaptorOneLimitX != false)
 		{
 			IsRaptorOneLimitX = false;
 			/*myfile.open("example.txt");

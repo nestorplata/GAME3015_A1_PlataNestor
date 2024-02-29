@@ -91,7 +91,7 @@ public:
 	/// add for it input
 	/// </summary>
 	/// <param name="command"></param>
-	void					onCommand(const Command& command);
+	void					onCommand(const Command& command, const float dt);
 	virtual unsigned int	getCategory() const;
 
 private:

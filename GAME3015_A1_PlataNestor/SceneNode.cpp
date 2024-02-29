@@ -32,7 +32,7 @@ SceneNode::Ptr SceneNode::detachChild(const SceneNode& node)
 	return result;
 }
 
-void SceneNode::update(const GameTimer& gt)
+void SceneNode::update (const GameTimer& gt)
 {
 	updateCurrent(gt);
 	updateChildren(gt);
@@ -169,15 +169,15 @@ void SceneNode::move(float x, float y, float z)
 
 // add it for it input
 //make sure Command.hpp is included!
-void SceneNode::onCommand(const Command& command)
+void SceneNode::onCommand(const Command& command, const float dt)
 {
 	// Command current node, if category matches
 	if (command.category & getCategory())
-		command.action(*this);
+		command.action(*this, dt);
 
 	// Command children
 	for (Ptr& child : mChildren)
-		child->onCommand(command);
+		child->onCommand(command, dt);
 }
 
 unsigned int SceneNode::getCategory() const

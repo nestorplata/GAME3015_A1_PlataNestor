@@ -1,4 +1,5 @@
 #include "World.hpp"
+#include "Player.h"
 
 // add 4 sky
 enum class RenderLayer : int
@@ -27,6 +28,7 @@ private:
 	virtual void OnMouseMove(WPARAM btnState, int x, int y)override;
 
 	void OnKeyboardInput(const GameTimer& gt);
+	void ProcessEvents();// add it for input
 	void UpdateCamera(const GameTimer& gt);
 	void AnimateMaterials(const GameTimer& gt);
 	void UpdateObjectCBs(const GameTimer& gt);
@@ -102,7 +104,7 @@ private:
 	POINT mLastMousePos;
 	Camera mCamera;
 	World mWorld;
-
+	Player mplayer; // add it for input
 public:
 	std::vector<std::unique_ptr<RenderItem>>& getRenderItems() { return mAllRitems; }
 	std::unordered_map<std::string, std::unique_ptr<Material>>& getMaterials() { return mMaterials; }

@@ -65,6 +65,8 @@ void Game::OnResize()
 void Game::Update(const GameTimer& gt)
 {
 	//OnKeyboardInput(gt);
+
+	
 	mCamera.UpdateViewMatrix();
 	mWorld.update(gt);
 	//UpdateCamera(gt);
@@ -87,6 +89,7 @@ void Game::Update(const GameTimer& gt)
 	UpdateObjectCBs(gt);
 	UpdateMaterialCBs(gt);
 	UpdateMainPassCB(gt);
+	ProcessEvents();// add it for input
 }
 
 void Game::Draw(const GameTimer& gt)
@@ -261,6 +264,13 @@ void Game::OnKeyboardInput(const GameTimer& gt)
 	}
 
 	mCamera.UpdateViewMatrix();
+}
+
+
+void Game::ProcessEvents()
+{
+	CommandQueue& commands = mWorld.getCommandQueue();
+	mplayer.handleRealtimeInput(commands);
 }
 
 void Game::UpdateCamera(const GameTimer& gt)
