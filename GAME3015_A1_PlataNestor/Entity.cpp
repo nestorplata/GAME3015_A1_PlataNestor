@@ -41,6 +41,8 @@ void Entity::updateCurrent(const GameTimer& gt)
 
 	move(mV.x, mV.y, mV.z);
 
+	setVelocity(0.0f, 0.0f, 0.0f);// add it
+
 	renderer->World = getWorldTransform();
 	renderer->NumFramesDirty++;
 }

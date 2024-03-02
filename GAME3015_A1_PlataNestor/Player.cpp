@@ -11,7 +11,11 @@
 #include "string"
 #include "algorithm"
 #include "iostream"
-const float Player::PlayerSpeed = 1.0f; //0.05f;
+#include <fstream>
+const float Player::PlayerSpeed = 5.0f; //0.05f;
+
+std::ofstream myfile;
+
 
 struct AircraftMover
 {
@@ -91,7 +95,37 @@ void Player::handleRealtimeInput(CommandQueue& commands)
 
 	}
 	
+	
+
+}
 
 
+void Player::handleEvent(CommandQueue& commands)
+{
+	if (GetAsyncKeyState('P') & 0x8000)
+	{
+		
+
+		Command output;
+		output.category = Category::PlayerAircraft;
+		output.action = [](SceneNode& s, const float dt) {
+			std::string ms;
+			ms = std::to_string(dt);
+
+			
+
+			myfile.open("example.txt");
+			myfile << " OurAirPlane_X: " << s.getWorldPositionX() << "\n";
+			myfile << " OurAirPlane_Y: " << s.getWorldPositionY() << "\n";
+			myfile << " OurAirPlane_Z: " << s.getWorldPositionZ() << "\n";
+			myfile << " Timerdelta: " << ms << "\n";
+
+
+
+			myfile.close();
+
+			};
+		commands.push(output);
+	}
 }
 #pragma endregion

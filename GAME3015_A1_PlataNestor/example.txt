@@ -1,2 +1,5 @@
-RaptorLimitXBounds: 2.00032
- IsRaptorLimitX: 0
+ OurAirPlane_X: 0
+ OurAirPlane_Y: 0.1
+ OurAirPlane_Z: 0
+ Timerdelta: 0.042236
+ PressCount: 5

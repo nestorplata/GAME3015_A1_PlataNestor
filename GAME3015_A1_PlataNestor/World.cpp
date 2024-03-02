@@ -30,7 +30,8 @@ void World::update(const GameTimer& gt)
 {
 	const float dt = gt.DeltaTime();
 
-	mPlayerAircraft->setVelocity(0.0f,0.0f,0.0f);
+	//mPlayerAircraft->setVelocity(0.0f,0.0f,0.0f);
+
 	// add it for unput
 	while (!mCommandQueue.isEmpty())
 
@@ -44,13 +45,13 @@ void World::update(const GameTimer& gt)
 	//Keep player's position inside the screen bounds, at least borderDistance units from the border
 	XMFLOAT3 position = mPlayerAircraft->getWorldPosition();
 
-	if (position.x < -1.0)
+	if (position.x < -1.5)
 	{
-		position.x = -1.0f;
+		position.x = -1.5f;
 	}
-	else if (position.x > 1.0)
+	else if (position.x > 1.5)
 	{
-		position.x = 1.0f;
+		position.x = 1.5f;
 	}
 	else if (position.z < -0.9)
 	{

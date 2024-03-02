@@ -215,62 +215,63 @@ void Game::OnMouseMove(WPARAM btnState, int x, int y)
 	//mLastMousePos.y = y;
 }
 
-void Game::OnKeyboardInput(const GameTimer& gt)
-{
-	const float dt = gt.DeltaTime();
-
-	mCamera.GetLook();
-	float tmin = 0;
-	float buffer = 0.5;
-	XMFLOAT3  oppositef3(-1, -1, -1);
-	XMVECTOR opposite = XMLoadFloat3(&oppositef3);
-
-	if (GetAsyncKeyState('W') & 0x8000)
-	{
-		bool hit = false;
-
-		if (!hit)
-		{
-			mCamera.Walk(10.0f * dt);
-		}
-	}
-
-	if (GetAsyncKeyState('S') & 0x8000)
-	{
-		bool hit = false;
-		if (!hit)
-		{
-			mCamera.Walk(-10.0f * dt);
-		}
-
-	}
-	if (GetAsyncKeyState('A') & 0x8000)
-	{
-		bool hit = false;
-		if (!hit)
-		{
-			mCamera.Strafe(-10.0f * dt);
-		}
-
-
-	}
-	if (GetAsyncKeyState('D') & 0x8000)
-	{
-		bool hit = false;
-		if (!hit)
-		{
-			mCamera.Strafe(10.0f * dt);
-		}
-	}
-
-	mCamera.UpdateViewMatrix();
-}
+//void Game::OnKeyboardInput(const GameTimer& gt)
+//{
+//	const float dt = gt.DeltaTime();
+//
+//	mCamera.GetLook();
+//	float tmin = 0;
+//	float buffer = 0.5;
+//	XMFLOAT3  oppositef3(-1, -1, -1);
+//	XMVECTOR opposite = XMLoadFloat3(&oppositef3);
+//
+//	if (GetAsyncKeyState('W') & 0x8000)
+//	{
+//		bool hit = false;
+//
+//		if (!hit)
+//		{
+//			mCamera.Walk(10.0f * dt);
+//		}
+//	}
+//
+//	if (GetAsyncKeyState('S') & 0x8000)
+//	{
+//		bool hit = false;
+//		if (!hit)
+//		{
+//			mCamera.Walk(-10.0f * dt);
+//		}
+//
+//	}
+//	if (GetAsyncKeyState('A') & 0x8000)
+//	{
+//		bool hit = false;
+//		if (!hit)
+//		{
+//			mCamera.Strafe(-10.0f * dt);
+//		}
+//
+//
+//	}
+//	if (GetAsyncKeyState('D') & 0x8000)
+//	{
+//		bool hit = false;
+//		if (!hit)
+//		{
+//			mCamera.Strafe(10.0f * dt);
+//		}
+//	}
+//
+//	mCamera.UpdateViewMatrix();
+//}
 
 
 void Game::ProcessEvents()
 {
 	CommandQueue& commands = mWorld.getCommandQueue();
 	mplayer.handleRealtimeInput(commands);
+	mplayer.handleEvent(commands);
 }
 
 void Game::UpdateCamera(const GameTimer& gt)
