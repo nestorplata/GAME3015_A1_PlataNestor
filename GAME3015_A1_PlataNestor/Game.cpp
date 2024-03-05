@@ -89,7 +89,7 @@ void Game::Update(const GameTimer& gt)
 	UpdateObjectCBs(gt);
 	UpdateMaterialCBs(gt);
 	UpdateMainPassCB(gt);
-	ProcessEvents();// add it for input
+	ProcessEvents(gt);// add it for input
 }
 
 void Game::Draw(const GameTimer& gt)
@@ -267,7 +267,7 @@ void Game::OnMouseMove(WPARAM btnState, int x, int y)
 //}
 
 
-void Game::ProcessEvents()
+void Game::ProcessEvents(const GameTimer& gt)
 {
 	CommandQueue& commands = mWorld.getCommandQueue();
 	mplayer.handleRealtimeInput(commands);
