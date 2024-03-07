@@ -9,6 +9,37 @@ void SpriteNode::drawCurrent() const
 {
 	renderer->World = getTransform();
 	renderer->NumFramesDirty++;
+
+
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList = game->GetApp()->GetCommandList();
+
+	cmdList->SetPipelineState(game->GetPSOs()["opaque"].Get());
+
+	UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
+	UINT matCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(MaterialConstants));
+
+	auto objectCB = game->getFrameResource()->ObjectCB->Resource();
+	auto matCB = game->getFrameResource()->MaterialCB->Resource();
+;
+     auto ri = renderer;
+
+	cmdList->IASetVertexBuffers(0, 1, &ri->Geo->VertexBufferView());
+	cmdList->IASetIndexBuffer(&ri->Geo->IndexBufferView());
+	cmdList->IASetPrimitiveTopology(ri->PrimitiveType);
+
+	////step18
+	CD3DX12_GPU_DESCRIPTOR_HANDLE tex(game->getmSrvDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+	tex.Offset(ri->Mat->DiffuseSrvHeapIndex, game->GetmCbvSrvDescriptorSize());
+
+	D3D12_GPU_VIRTUAL_ADDRESS objCBAddress = objectCB->GetGPUVirtualAddress() + ri->ObjCBIndex * objCBByteSize;
+	D3D12_GPU_VIRTUAL_ADDRESS matCBAddress = matCB->GetGPUVirtualAddress() + ri->Mat->MatCBIndex * matCBByteSize;
+
+	//step19
+	cmdList->SetGraphicsRootDescriptorTable(0, tex);
+	cmdList->SetGraphicsRootConstantBufferView(1, objCBAddress);
+	cmdList->SetGraphicsRootConstantBufferView(3, matCBAddress);
+
+	cmdList->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
 }
 
 void SpriteNode::buildCurrent()
@@ -19,7 +50,7 @@ void SpriteNode::buildCurrent()
 	XMStoreFloat4x4(&renderer->TexTransform, XMMatrixScaling(10.0f, 10.0f, 10.0f));
 	renderer->ObjCBIndex = game->getRenderItems().size();
 	renderer->Mat = game->getMaterials()["Desert"].get();
-	renderer->Geo = game->getGeometries()["boxGeo"].get();
+	renderer->Geo = game->getGeometries()["shapeGeo"].get();//renderer->Geo = game->getGeometries()["boxGeo"].get();
 	renderer->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	renderer->IndexCount = renderer->Geo->DrawArgs["box"].IndexCount;
 	renderer->StartIndexLocation = renderer->Geo->DrawArgs["box"].StartIndexLocation;

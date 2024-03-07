@@ -1,6 +1,2 @@
-﻿  Aircraft.cpp
-C:\Users\Owner\Documents\GitHub\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\Aircraft.cpp(31,96): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\Owner\Documents\GitHub\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\Aircraft.cpp(31,70): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\Owner\Documents\GitHub\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\Aircraft.cpp(31,51): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\Owner\Documents\GitHub\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\Aircraft.cpp(45,52): warning C4267: '=': conversion from 'size_t' to 'UINT', possible loss of data
-  GAME3015_A1_PlataNestor.vcxproj -> C:\Users\Owner\Documents\GitHub\GAME3015_A1_PlataNestor\x64\Debug\GAME3015_A1_PlataNestor.exe
+﻿  Player.cpp
+  GAME3015_A1_PlataNestor.vcxproj -> C:\Users\Owner\Documents\GitHub\hsalamat_GameEngineDevelopment2\GAME3015_A1_PlataNestorFold\GAME3015_A1_PlataNestor\x64\Debug\GAME3015_A1_PlataNestor.exe

@@ -41,6 +41,23 @@ void Entity::updateCurrent(const GameTimer& gt)
 
 	move(mV.x, mV.y, mV.z);
 
+	setVelocity(0.0f, 0.0f, 0.0f);// add it
+
 	renderer->World = getWorldTransform();
 	renderer->NumFramesDirty++;
+}
+// add it for input
+void Entity::accelerate(XMFLOAT3 velocity)
+{
+	mVelocity.x = mVelocity.x + velocity.x;
+	mVelocity.y = mVelocity.y + velocity.y;
+	mVelocity.z = mVelocity.z + velocity.z;
+	
+}
+// add it for input
+void Entity::accelerate(float vx, float vy, float vz)
+{
+	mVelocity.x += vx;
+	mVelocity.y += vy;
+	mVelocity.z += vz;
 }

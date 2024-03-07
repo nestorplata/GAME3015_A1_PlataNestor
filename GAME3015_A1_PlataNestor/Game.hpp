@@ -1,4 +1,13 @@
 #include "World.hpp"
+#include "Player.h"
+
+// add 4 sky
+enum class RenderLayer : int
+{
+	Opaque = 0,
+	Sky,
+	Count
+};
 
 class Game : public D3DApp
 {
@@ -17,8 +26,10 @@ private:
 	virtual void OnMouseDown(WPARAM btnState, int x, int y)override;
 	virtual void OnMouseUp(WPARAM btnState, int x, int y)override;
 	virtual void OnMouseMove(WPARAM btnState, int x, int y)override;
+	virtual void OnKeyDown(WPARAM btnState )override;// add it for input
 
 	void OnKeyboardInput(const GameTimer& gt);
+	void ProcessEvents(WPARAM btnState);// add it for input
 	void UpdateCamera(const GameTimer& gt);
 	void AnimateMaterials(const GameTimer& gt);
 	void UpdateObjectCBs(const GameTimer& gt);
@@ -39,7 +50,7 @@ private:
 	void BuildFrameResources();
 	void BuildMaterials();
 	void BuildRenderItems();
-	void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems);
+	//void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems);
 
 	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
 
@@ -67,9 +78,16 @@ private:
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
 
 	ComPtr<ID3D12PipelineState> mOpaquePSO = nullptr;
+	std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mPSOs; // add 4 sky
 
 	// List of all the render items.
 	std::vector<std::unique_ptr<RenderItem>> mAllRitems;
+
+	// Render items divided by PSO. add 4 sky
+	//std::vector<RenderItem*> mRitemLayer[(int)RenderLayer::Count];
+
+
+	//UINT mSkyTexHeapIndex = 0;// add 4 sky
 
 	// Render items divided by PSO.
 	std::vector<RenderItem*> mOpaqueRitems;
@@ -87,9 +105,15 @@ private:
 	POINT mLastMousePos;
 	Camera mCamera;
 	World mWorld;
-
+	Player mplayer; // add it for input
 public:
 	std::vector<std::unique_ptr<RenderItem>>& getRenderItems() { return mAllRitems; }
 	std::unordered_map<std::string, std::unique_ptr<Material>>& getMaterials() { return mMaterials; }
 	std::unordered_map<std::string, std::unique_ptr<MeshGeometry>>& getGeometries() { return mGeometries; }
+	std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> GetPSOs() { return mPSOs; }//  add 4 draw in scene node
+	FrameResource* getFrameResource() { return mCurrFrameResource; }//  add 4 draw in scene node
+
+	ComPtr<ID3D12DescriptorHeap> getmSrvDescriptorHeap() { return mSrvDescriptorHeap; }//  add 4 draw in scene node
+	UINT GetmCbvSrvDescriptorSize() { return mCbvSrvDescriptorSize; }// add 4 draw in scene node
 };
+
