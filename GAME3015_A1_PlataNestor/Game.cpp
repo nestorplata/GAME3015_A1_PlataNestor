@@ -89,7 +89,7 @@ void Game::Update(const GameTimer& gt)
 	UpdateObjectCBs(gt);
 	UpdateMaterialCBs(gt);
 	UpdateMainPassCB(gt);
-	ProcessEvents(gt);// add it for input
+	//ProcessEvents(gt);// add it for input
 }
 
 void Game::Draw(const GameTimer& gt)
@@ -194,7 +194,11 @@ void Game::OnMouseDown(WPARAM btnState, int x, int y)
 
 	//SetCapture(mhMainWnd);
 }
-
+void Game::OnKeyDown(WPARAM btnState)
+{
+	ProcessEvents( btnState);
+	
+}
 void Game::OnMouseUp(WPARAM btnState, int x, int y)
 {
 	//ReleaseCapture();
@@ -267,11 +271,11 @@ void Game::OnMouseMove(WPARAM btnState, int x, int y)
 //}
 
 
-void Game::ProcessEvents(const GameTimer& gt)
+void Game::ProcessEvents(WPARAM btnState)
 {
 	CommandQueue& commands = mWorld.getCommandQueue();
 	mplayer.handleRealtimeInput(commands);
-	mplayer.handleEvent(commands);
+	mplayer.handleEvent(commands, btnState);
 }
 
 void Game::UpdateCamera(const GameTimer& gt)

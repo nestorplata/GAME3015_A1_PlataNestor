@@ -1,4 +1,4 @@
- OurAirPlane_X: 0
+ OurAirPlane_X: -0.290763
  OurAirPlane_Y: 0.1
  OurAirPlane_Z: 0
- Timerdelta: 0.004499
+ Timerdelta: 0.002107

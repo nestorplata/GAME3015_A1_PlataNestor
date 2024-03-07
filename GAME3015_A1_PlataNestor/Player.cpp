@@ -12,8 +12,8 @@
 #include "algorithm"
 #include "iostream"
 #include <fstream>
-//#include "Input.h"
-const float Player::PlayerSpeed = 3.0f; //0.05f;
+
+const float Player::PlayerSpeed = 30.0f;//3.0f; //0.05f;
 
 std::ofstream myfile;
 Input::Keys myKeys;
@@ -38,10 +38,10 @@ struct AircraftMover
 Player::Player()
 {
 	// Set initial key bindings
-	mKeyBinding[Input::Left] = MoveLeft;
-	mKeyBinding[Input::Right] = MoveRight;
-	mKeyBinding[Input::Up] = MoveUp;
-	mKeyBinding[Input::Down] = MoveDown;
+	mKeyBinding[Input::A] = MoveLeft;
+	mKeyBinding[Input::D] = MoveRight;
+	mKeyBinding[Input::W] = MoveUp;
+	mKeyBinding[Input::S] = MoveDown;
 	mKeyBinding[Input::P] = GetPosition;
 	myKeys = Input::P;
 	// Set initial action bindings
@@ -115,14 +115,28 @@ Player::Player()
 
 void Player::handleRealtimeInput(CommandQueue& commands)
 {
-	// Traverse all assigned keys and check if they are pressed
+	 //Traverse all assigned keys and check if they are pressed
 	for (auto pair : mKeyBinding)
 	{
-		// If key is pressed, lookup action and trigger corresponding command
-		if (GetAsyncKeyState(pair.first) && isRealtimeAction(pair.second) && !isEventAction(pair.second))
+		 //If key is pressed, lookup action and trigger corresponding command
+		if (GetAsyncKeyState(pair.first) && isRealtimeAction(pair.second))
 			commands.push(mActionBinding[pair.second]);
 	}
 }
+//void Player::handleRealtimeInput(CommandQueue& commands, WPARAM btnState)
+//{
+//	Input::Keys tempKeys;
+//
+//	tempKeys = (Input::Keys)btnState;
+//
+//	 Traverse all assigned keys and check if they are pressed
+//	for (auto pair : mKeyBinding)
+//	{
+//		 If key is pressed, lookup action and trigger corresponding command
+//		if (tempKeys == pair.first && isRealtimeAction(pair.second))
+//			commands.push(mActionBinding[pair.second]);
+//	}
+//}
 
 //void Player::handleEvent(CommandQueue& commands)
 //{
@@ -161,7 +175,7 @@ void Player::initializeActions()
 {
 	
 
-	mActionBinding[MoveLeft].action = derivedAction<Aircraft>(AircraftMover(-PlayerSpeed, 0.f, 0.f));
+	mActionBinding[MoveLeft].action = derivedAction<Aircraft>(AircraftMover(-PlayerSpeed , 0.f, 0.f));
 	mActionBinding[MoveRight].action = derivedAction<Aircraft>(AircraftMover(PlayerSpeed, 0.f, 0.f));
 	mActionBinding[MoveUp].action = derivedAction<Aircraft>(AircraftMover(0.f, 0.f, PlayerSpeed));
 	mActionBinding[MoveDown].action = derivedAction<Aircraft>(AircraftMover(0.f, 0.f, -PlayerSpeed));
@@ -208,17 +222,27 @@ void Player::initializeActions()
 //	
 //}
 	
-void Player::handleEvent(CommandQueue& commands)
+//void Player::handleEvent(CommandQueue& commands)
+//{
+//	// Traverse all assigned keys and check if they are pressed
+//	for (auto pair : mKeyBinding)
+//	{
+//		// If key is pressed, lookup action and trigger corresponding command
+//		if (GetAsyncKeyState(pair.first) && !isRealtimeAction(pair.second)&& isEventAction(pair.second))
+//			commands.push(mActionBinding[pair.second]);
+//	}
+//}
+void Player::handleEvent(CommandQueue& commands, WPARAM btnState)
 {
-	// Traverse all assigned keys and check if they are pressed
-	for (auto pair : mKeyBinding)
-	{
-		// If key is pressed, lookup action and trigger corresponding command
-		if (GetAsyncKeyState(pair.first) && !isRealtimeAction(pair.second)&& isEventAction(pair.second))
-			commands.push(mActionBinding[pair.second]);
-	}
+	Input::Keys tempKeys;
+
+	 tempKeys = (Input::Keys)btnState;
+
+	auto found = mKeyBinding.find(tempKeys);
+	if (found != mKeyBinding.end() && !isRealtimeAction(found->second))
+		commands.push(mActionBinding[found->second]);
+
 }
-		
 
 
 bool Player::isRealtimeAction(Action action)

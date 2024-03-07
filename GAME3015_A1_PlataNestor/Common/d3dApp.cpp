@@ -364,8 +364,13 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
         else if((int)wParam == VK_F2)
             Set4xMsaaState(!m4xMsaaState);
+		
 
         return 0;
+		// add for the player class
+	case WM_KEYDOWN:
+		OnKeyDown(wParam);
+		return 0;
 	}
 
 	return DefWindowProc(hwnd, msg, wParam, lParam);

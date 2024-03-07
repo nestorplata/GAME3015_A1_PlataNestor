@@ -14,7 +14,7 @@ class Player
 public:
 	Player();
 	static const float		PlayerSpeed;
-	void                    handleEvent(CommandQueue& commands);
+	void                    handleEvent(CommandQueue& commands, WPARAM btnState);
 	void					handleRealtimeInput(CommandQueue& commands);
 
 	enum Action
