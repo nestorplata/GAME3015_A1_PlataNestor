@@ -13,22 +13,68 @@ Game::~Game()
 		FlushCommandQueue();
 }
 
+//bool Game::Initialize()
+//{
+//	if (!D3DApp::Initialize())
+//		return false;
+//
+//
+//	mCamera.SetPosition(0, 2, -3);
+//	mCamera.Pitch(3.14 / 6 );
+//
+//
+//	// Reset the command list to prep for initialization commands.
+//	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
+//
+//	// Get the increment size of a descriptor in this heap type.  This is hardware specific, 
+//	// so we have to query this information.
+//	mCbvSrvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+//
+//	mShadowMap = std::make_unique<ShadowMap>(
+//		md3dDevice.Get(), 2048, 2048);// add for shadow
+//
+//	LoadTextures();
+//	BuildRootSignature();
+//	BuildDescriptorHeaps();
+//	BuildShadersAndInputLayout();
+//	BuildShapeGeometry();
+//	BuildMaterials();
+//	BuildRenderItems();
+//	BuildFrameResources();
+//	BuildPSOs();
+//
+//	// Execute the initialization commands.
+//	ThrowIfFailed(mCommandList->Close());
+//	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+//	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+//
+//	// Wait until initialization is complete.
+//	FlushCommandQueue();
+//
+//	return true;
+//}
 bool Game::Initialize()
 {
 	if (!D3DApp::Initialize())
 		return false;
 
+	XMMATRIX R = XMMatrixRotationY(mLightRotationAngle);
+	for (int i = 0; i < 3; ++i)
+	{
+		XMVECTOR lightDir = XMLoadFloat3(&mBaseLightDirections[i]);
+		lightDir = XMVector3TransformNormal(lightDir, R);
+		XMStoreFloat3(&mRotatedLightDirections[i], lightDir);
+	}
 
-	mCamera.SetPosition(0, 2, -3);
-	mCamera.Pitch(3.14 / 6 );
+	mCamera.SetPosition(0, 5, 0);
+	mCamera.Pitch(3.14 / 2.2);
 
-
-	// Reset the command list to prep for initialization commands.
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
-	// Get the increment size of a descriptor in this heap type.  This is hardware specific, 
-	// so we have to query this information.
-	mCbvSrvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	mCbvSrvUavDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	mShadowMap = std::make_unique<ShadowMap>(
+		md3dDevice.Get(), 2048, 2048);
 
 	LoadTextures();
 	BuildRootSignature();
@@ -87,11 +133,127 @@ void Game::Update(const GameTimer& gt)
 
 	AnimateMaterials(gt);
 	UpdateObjectCBs(gt);
-	UpdateMaterialCBs(gt);
+	//UpdateMaterialCBs(gt);
+	UpdateMaterialBuffer(gt);
 	UpdateMainPassCB(gt);
 	//ProcessEvents(gt);// add it for input
 }
 
+void Game::CreateRtvAndDsvDescriptorHeaps()
+{
+	// Add +6 RTV for cube render target.
+	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
+	rtvHeapDesc.NumDescriptors = SwapChainBufferCount;
+	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	rtvHeapDesc.NodeMask = 0;
+	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
+		&rtvHeapDesc, IID_PPV_ARGS(mRtvHeap.GetAddressOf())));
+
+	// Add +1 DSV for shadow map.
+	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
+	dsvHeapDesc.NumDescriptors = 2;
+	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	dsvHeapDesc.NodeMask = 0;
+	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
+		&dsvHeapDesc, IID_PPV_ARGS(mDsvHeap.GetAddressOf())));
+}
+
+//void Game::Draw(const GameTimer& gt)
+//{
+//	auto cmdListAlloc = mCurrFrameResource->CmdListAlloc;
+//
+//	// Reuse the memory associated with command recording.
+//	// We can only reset when the associated command lists have finished execution on the GPU.
+//	ThrowIfFailed(cmdListAlloc->Reset());
+//
+//	// A command list can be reset after it has been added to the command queue via ExecuteCommandList.
+//	// Reusing the command list reuses memory.
+//	//ThrowIfFailed(mCommandList->Reset(cmdListAlloc.Get(), mOpaquePSO.Get())); // change 4 sky
+//	ThrowIfFailed(mCommandList->Reset(cmdListAlloc.Get(), mPSOs["opaque"].Get())); // add 4 sky
+//
+//	//mScreenViewport.TopLeftX = 0.0f;
+//	//mScreenViewport.TopLeftY = 0.0f;
+//	//mScreenViewport.Height = 200;
+//	//mScreenViewport.Height = 200;
+//
+//	mCommandList->RSSetViewports(1, &mScreenViewport);
+//	mCommandList->RSSetScissorRects(1, &mScissorRect);
+//
+//	// Indicate a state transition on the resource usage.
+//	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
+//		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+//
+//	// Clear the back buffer and depth buffer.
+//	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::LightSteelBlue, 0, nullptr);
+//	mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+//
+//	// Specify the buffers we are going to render to.
+//	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
+//
+//	ID3D12DescriptorHeap* descriptorHeaps[] = { mSrvDescriptorHeap.Get() };
+//	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+//
+//	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
+//
+//	auto passCB = mCurrFrameResource->PassCB->Resource();
+//	mCommandList->SetGraphicsRootConstantBufferView(2, passCB->GetGPUVirtualAddress());
+//
+//    // add 4 sky
+//	// Bind all the materials used in this scene.  For structured buffers, we can bypass the heap and 
+//	// set as a root descriptor.
+//	//auto matBuffer = mCurrFrameResource->MaterialBuffer->Resource(); // add MaterialBuffer to add frameResource
+//	//mCommandList->SetGraphicsRootShaderResourceView(2, matBuffer->GetGPUVirtualAddress());
+//
+//	// add 4 sky
+//	// step4: Bind the sky cube map.  For our demos, we just use one "world" cube map representing the environment
+//	// from far away, so all objects will use the same cube map and we only need to set it once per-frame.  
+//	// If we wanted to use "local" cube maps, we would have to change them per-object, or dynamically
+//	// index into an array of cube maps.
+//
+//	/*CD3DX12_GPU_DESCRIPTOR_HANDLE skyTexDescriptor(mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+//	skyTexDescriptor.Offset(mSkyTexHeapIndex, mCbvSrvDescriptorSize);
+//	mCommandList->SetGraphicsRootDescriptorTable(3, skyTexDescriptor);*/
+//
+//	// add 4 sky
+//	// Bind all the textures used in this scene.  Observe
+//   // that we only have to specify the first descriptor in the table.  
+//  // The root signature knows how many descriptors are expected in the table.
+//	//mCommandList->SetGraphicsRootDescriptorTable(4, mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+//
+//
+//	mWorld.draw();
+//	//DrawRenderItems(mCommandList.Get(), mOpaqueRitems);
+//
+//	// add 4 sky
+//	//mCommandList->SetPipelineState(mPSOs["sky"].Get());
+//	// add 4 sky
+//	//DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Sky]);
+//
+//	// Indicate a state transition on the resource usage.
+//	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
+//		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+//
+//	// Done recording commands.
+//	ThrowIfFailed(mCommandList->Close());
+//
+//	// Add the command list to the queue for execution.
+//	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+//	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+//
+//	// Swap the back and front buffers
+//	ThrowIfFailed(mSwapChain->Present(0, 0));
+//	mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
+//
+//	// Advance the fence value to mark commands up to this fence point.
+//	mCurrFrameResource->Fence = ++mCurrentFence;
+//
+//	// Add an instruction to the command queue to set a new fence point. 
+//	// Because we are on the GPU timeline, the new fence point won't be 
+//	// set until the GPU finishes processing all the commands prior to this Signal().
+//	mCommandQueue->Signal(mFence.Get(), mCurrentFence);
+//}
 void Game::Draw(const GameTimer& gt)
 {
 	auto cmdListAlloc = mCurrFrameResource->CmdListAlloc;
@@ -102,70 +264,64 @@ void Game::Draw(const GameTimer& gt)
 
 	// A command list can be reset after it has been added to the command queue via ExecuteCommandList.
 	// Reusing the command list reuses memory.
-	//ThrowIfFailed(mCommandList->Reset(cmdListAlloc.Get(), mOpaquePSO.Get())); // change 4 sky
-	ThrowIfFailed(mCommandList->Reset(cmdListAlloc.Get(), mPSOs["opaque"].Get())); // add 4 sky
-
-	//mScreenViewport.TopLeftX = 0.0f;
-	//mScreenViewport.TopLeftY = 0.0f;
-	//mScreenViewport.Height = 200;
-	//mScreenViewport.Height = 200;
-
-	mCommandList->RSSetViewports(1, &mScreenViewport);
-	mCommandList->RSSetScissorRects(1, &mScissorRect);
-
-	// Indicate a state transition on the resource usage.
-	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
-		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-
-	// Clear the back buffer and depth buffer.
-	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::LightSteelBlue, 0, nullptr);
-	mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
-
-	// Specify the buffers we are going to render to.
-	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
+	ThrowIfFailed(mCommandList->Reset(cmdListAlloc.Get(), mPSOs["opaque"].Get()));
 
 	ID3D12DescriptorHeap* descriptorHeaps[] = { mSrvDescriptorHeap.Get() };
 	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 
-	auto passCB = mCurrFrameResource->PassCB->Resource();
-	mCommandList->SetGraphicsRootConstantBufferView(2, passCB->GetGPUVirtualAddress());
-
-    // add 4 sky
 	// Bind all the materials used in this scene.  For structured buffers, we can bypass the heap and 
 	// set as a root descriptor.
-	//auto matBuffer = mCurrFrameResource->MaterialBuffer->Resource(); // add MaterialBuffer to add frameResource
-	//mCommandList->SetGraphicsRootShaderResourceView(2, matBuffer->GetGPUVirtualAddress());
+	auto matBuffer = mCurrFrameResource->MaterialBuffer->Resource();
+	mCommandList->SetGraphicsRootShaderResourceView(2, matBuffer->GetGPUVirtualAddress());
 
-	// add 4 sky
-	// step4: Bind the sky cube map.  For our demos, we just use one "world" cube map representing the environment
+	// Bind null SRV for shadow map pass.
+	mCommandList->SetGraphicsRootDescriptorTable(3, mNullSrv);
+
+	// Bind all the textures used in this scene.  Observe
+	// that we only have to specify the first descriptor in the table.  
+	// The root signature knows how many descriptors are expected in the table.
+	mCommandList->SetGraphicsRootDescriptorTable(4, mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+
+	mCommandList->RSSetViewports(1, &mScreenViewport);
+	mCommandList->RSSetScissorRects(1, &mScissorRect);
+
+	// Indicate a state transition on the resource usage.
+	auto transition1 = CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
+		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	mCommandList->ResourceBarrier(1, &transition1);
+
+	// Clear the back buffer and depth buffer.
+	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::LightSteelBlue, 0, nullptr);
+	mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+
+	auto buffers = CurrentBackBufferView();
+	auto dsv = DepthStencilView();
+	// Specify the buffers we are going to render to.
+
+	mCommandList->OMSetRenderTargets(1, &buffers, true, &dsv);
+
+	auto passCB = mCurrFrameResource->PassCB->Resource();
+	mCommandList->SetGraphicsRootConstantBufferView(1, passCB->GetGPUVirtualAddress());
+
+	// Bind the sky cube map.  For our demos, we just use one "world" cube map representing the environment
 	// from far away, so all objects will use the same cube map and we only need to set it once per-frame.  
 	// If we wanted to use "local" cube maps, we would have to change them per-object, or dynamically
 	// index into an array of cube maps.
 
-	/*CD3DX12_GPU_DESCRIPTOR_HANDLE skyTexDescriptor(mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-	skyTexDescriptor.Offset(mSkyTexHeapIndex, mCbvSrvDescriptorSize);
-	mCommandList->SetGraphicsRootDescriptorTable(3, skyTexDescriptor);*/
-
-	// add 4 sky
-	// Bind all the textures used in this scene.  Observe
-   // that we only have to specify the first descriptor in the table.  
-  // The root signature knows how many descriptors are expected in the table.
-	//mCommandList->SetGraphicsRootDescriptorTable(4, mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-
+	//CD3DX12_GPU_DESCRIPTOR_HANDLE skyTexDescriptor(mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+	//skyTexDescriptor.Offset(mSkyTexHeapIndex, mCbvSrvUavDescriptorSize);
+	//mCommandList->SetGraphicsRootDescriptorTable(3, skyTexDescriptor);
 
 	mWorld.draw();
-	//DrawRenderItems(mCommandList.Get(), mOpaqueRitems);
-
-	// add 4 sky
-	//mCommandList->SetPipelineState(mPSOs["sky"].Get());
-	// add 4 sky
-	//DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Sky]);
+	//DrawSceneToShadowMap();
 
 	// Indicate a state transition on the resource usage.
-	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
-		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+	auto transition2 = CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
+		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+	// Indicate a state transition on the resource usage.
+	mCommandList->ResourceBarrier(1, &transition2);
 
 	// Done recording commands.
 	ThrowIfFailed(mCommandList->Close());
@@ -186,7 +342,6 @@ void Game::Draw(const GameTimer& gt)
 	// set until the GPU finishes processing all the commands prior to this Signal().
 	mCommandQueue->Signal(mFence.Get(), mCurrentFence);
 }
-
 void Game::OnMouseDown(WPARAM btnState, int x, int y)
 {
 	//mLastMousePos.x = x;
@@ -325,9 +480,36 @@ void Game::UpdateObjectCBs(const GameTimer& gt)
 	}
 }
 
-void Game::UpdateMaterialCBs(const GameTimer& gt)
+//void Game::UpdateMaterialCBs(const GameTimer& gt)
+//{
+//	auto currMaterialCB = mCurrFrameResource->MaterialCB.get();
+//	for (auto& e : mMaterials)
+//	{
+//		// Only update the cbuffer data if the constants have changed.  If the cbuffer
+//		// data changes, it needs to be updated for each FrameResource.
+//		Material* mat = e.second.get();
+//		if (mat->NumFramesDirty > 0)
+//		{
+//			XMMATRIX matTransform = XMLoadFloat4x4(&mat->MatTransform);
+//
+//			MaterialConstants matConstants;
+//			matConstants.DiffuseAlbedo = mat->DiffuseAlbedo;
+//			matConstants.FresnelR0 = mat->FresnelR0;
+//			matConstants.Roughness = mat->Roughness;
+//			XMStoreFloat4x4(&matConstants.MatTransform, XMMatrixTranspose(matTransform));
+//
+//			currMaterialCB->CopyData(mat->MatCBIndex, matConstants);
+//
+//			// Next FrameResource need to be updated too.
+//			mat->NumFramesDirty--;
+//		}
+//	}
+//}
+
+
+void Game::UpdateMaterialBuffer(const GameTimer& gt)
 {
-	auto currMaterialCB = mCurrFrameResource->MaterialCB.get();
+	auto currMaterialBuffer = mCurrFrameResource->MaterialBuffer.get();
 	for (auto& e : mMaterials)
 	{
 		// Only update the cbuffer data if the constants have changed.  If the cbuffer
@@ -337,20 +519,21 @@ void Game::UpdateMaterialCBs(const GameTimer& gt)
 		{
 			XMMATRIX matTransform = XMLoadFloat4x4(&mat->MatTransform);
 
-			MaterialConstants matConstants;
-			matConstants.DiffuseAlbedo = mat->DiffuseAlbedo;
-			matConstants.FresnelR0 = mat->FresnelR0;
-			matConstants.Roughness = mat->Roughness;
-			XMStoreFloat4x4(&matConstants.MatTransform, XMMatrixTranspose(matTransform));
+			MaterialData matData;
+			matData.DiffuseAlbedo = mat->DiffuseAlbedo;
+			matData.FresnelR0 = mat->FresnelR0;
+			matData.Roughness = mat->Roughness;
+			XMStoreFloat4x4(&matData.MatTransform, XMMatrixTranspose(matTransform));
+			matData.DiffuseMapIndex = mat->DiffuseSrvHeapIndex;
+			matData.NormalMapIndex = mat->NormalSrvHeapIndex;
 
-			currMaterialCB->CopyData(mat->MatCBIndex, matConstants);
+			currMaterialBuffer->CopyData(mat->MatCBIndex, matData);
 
 			// Next FrameResource need to be updated too.
 			mat->NumFramesDirty--;
 		}
 	}
 }
-
 
 void Game::UpdateMainPassCB(const GameTimer& gt)
 {
@@ -399,6 +582,16 @@ void Game::LoadTextures()
 
 	mTextures[EagleTex->Name] = std::move(EagleTex);
 
+	//Eagle normal
+	auto EagleNorTex = std::make_unique<Texture>();
+	EagleNorTex->Name = "EagleNorTex";
+	EagleNorTex->Filename = L"Media/Textures/EagleNMap.dds";
+	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+		mCommandList.Get(), EagleNorTex->Filename.c_str(),
+		EagleNorTex->Resource, EagleNorTex->UploadHeap));
+
+	mTextures[EagleNorTex->Name] = std::move(EagleNorTex);
+
 	//Raptor
 	auto RaptorTex = std::make_unique<Texture>();
 	RaptorTex->Name = "RaptorTex";
@@ -409,15 +602,33 @@ void Game::LoadTextures()
 
 	mTextures[RaptorTex->Name] = std::move(RaptorTex);
 
-	//Desert
+	//Raptor normal
+	auto RaptorNorTex = std::make_unique<Texture>();
+	RaptorNorTex->Name = "RaptorNorTex";
+	RaptorNorTex->Filename = L"Media/Textures/RaptorNMap.dds";
+	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+		mCommandList.Get(), RaptorNorTex->Filename.c_str(),
+		RaptorNorTex->Resource, RaptorNorTex->UploadHeap));
+
+	mTextures[RaptorNorTex->Name] = std::move(RaptorNorTex);
+
+	//Desert 
 	auto DesertTex = std::make_unique<Texture>();
 	DesertTex->Name = "DesertTex";
 	DesertTex->Filename = L"Media/Textures/Desert.dds";
 	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
 		mCommandList.Get(), DesertTex->Filename.c_str(),
 		DesertTex->Resource, DesertTex->UploadHeap));
-
 	mTextures[DesertTex->Name] = std::move(DesertTex);
+
+	//Desert normal
+	auto DesertNorTex = std::make_unique<Texture>();
+	DesertNorTex->Name = "DesertNorTex";
+	DesertNorTex->Filename = L"Media/Textures/DesertNMap.dds";
+	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+		mCommandList.Get(), DesertNorTex->Filename.c_str(),
+		DesertNorTex->Resource, DesertNorTex->UploadHeap));
+	mTextures[DesertNorTex->Name] = std::move(DesertNorTex);
 
 	//RaptorShadow
 	auto RaptorShadowTex = std::make_unique<Texture>();
@@ -428,6 +639,17 @@ void Game::LoadTextures()
 		RaptorShadowTex->Resource, RaptorShadowTex->UploadHeap));
 
 	mTextures[RaptorShadowTex->Name] = std::move(RaptorShadowTex);
+	
+	
+	//RaptorShadow normal
+	auto RaptorNorShadowTex = std::make_unique<Texture>();
+	RaptorNorShadowTex->Name = "RaptorNorShadowTex";
+	RaptorNorShadowTex->Filename = L"Media/Textures/RaptorShadow1NMap.dds";
+	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+		mCommandList.Get(), RaptorNorShadowTex->Filename.c_str(),
+		RaptorNorShadowTex->Resource, RaptorNorShadowTex->UploadHeap));
+
+	mTextures[RaptorNorShadowTex->Name] = std::move(RaptorNorShadowTex);
 
 	// EagleShadow
 	auto EagleShadowTex = std::make_unique<Texture>();
@@ -438,6 +660,46 @@ void Game::LoadTextures()
 		EagleShadowTex->Resource, EagleShadowTex->UploadHeap));
 
 	mTextures[EagleShadowTex->Name] = std::move(EagleShadowTex);
+	
+	// EagleShadow normal
+	auto EagleNorShadowTex = std::make_unique<Texture>();
+	EagleNorShadowTex->Name = "EagleNorShadowTex";
+	EagleNorShadowTex->Filename = L"Media/Textures/EagleShadow1NMap.dds";
+	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+		mCommandList.Get(), EagleNorShadowTex->Filename.c_str(),
+		EagleNorShadowTex->Resource, EagleNorShadowTex->UploadHeap));
+
+	mTextures[EagleNorShadowTex->Name] = std::move(EagleNorShadowTex);
+
+	//Cubemap default deffuse cubemap
+	auto DefaultDiffuseMap = std::make_unique<Texture>();
+	DefaultDiffuseMap->Name = "DefaultDiffuseMap";
+	DefaultDiffuseMap->Filename = L"Media/Textures/white1x1.dds";
+	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+		mCommandList.Get(), DefaultDiffuseMap->Filename.c_str(),
+		DefaultDiffuseMap->Resource, DefaultDiffuseMap->UploadHeap));
+
+	mTextures[DefaultDiffuseMap->Name] = std::move(DefaultDiffuseMap);
+
+	//Cubemap default normal cubemap
+	auto DefaultNormalMap = std::make_unique<Texture>();
+	DefaultNormalMap->Name = "DefaultNormalMap";
+	DefaultNormalMap->Filename = L"Media/Textures/default_nmap.dds";
+	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+		mCommandList.Get(), DefaultNormalMap->Filename.c_str(),
+		DefaultNormalMap->Resource, DefaultNormalMap->UploadHeap));
+
+	mTextures[DefaultNormalMap->Name] = std::move(DefaultNormalMap);
+
+	//Cubemap
+	auto CubemapTex = std::make_unique<Texture>();
+	CubemapTex->Name = "CubemapTex";
+	CubemapTex->Filename = L"Media/Textures/Cubemap.dds";
+	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+		mCommandList.Get(), CubemapTex->Filename.c_str(),
+		CubemapTex->Resource, CubemapTex->UploadHeap));
+
+	mTextures[CubemapTex->Name] = std::move(CubemapTex);
 
 	//add 4 sky
 	/*auto skyCubeMapTex = std::make_unique<Texture>();
@@ -450,27 +712,73 @@ void Game::LoadTextures()
 	mTextures[skyCubeMapTex->Name] = std::move(skyCubeMapTex);*/
 }
 
+//void Game::BuildRootSignature()
+//{
+//	CD3DX12_DESCRIPTOR_RANGE texTable;
+//	texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+//
+//	// Root parameter can be a table, root descriptor or root constants.
+//	CD3DX12_ROOT_PARAMETER slotRootParameter[4];
+//
+//	// Perfomance TIP: Order from most frequent to least frequent.
+//	slotRootParameter[0].InitAsDescriptorTable(1, &texTable, D3D12_SHADER_VISIBILITY_PIXEL);
+//	slotRootParameter[1].InitAsConstantBufferView(0);
+//	slotRootParameter[2].InitAsConstantBufferView(1);
+//	slotRootParameter[3].InitAsConstantBufferView(2);
+//
+//	auto staticSamplers = GetStaticSamplers();
+//
+//	// A root signature is an array of root parameters.
+//	//The Init function of the CD3DX12_ROOT_SIGNATURE_DESC class has two parameters that allow you to
+//		//define an array of so - called static samplers your application can use.
+//	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(4, slotRootParameter,
+//		(UINT)staticSamplers.size(), staticSamplers.data(),  //6 samplers!
+//		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+//
+//	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
+//	ComPtr<ID3DBlob> serializedRootSig = nullptr;
+//	ComPtr<ID3DBlob> errorBlob = nullptr;
+//	HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
+//		serializedRootSig.GetAddressOf(), errorBlob.GetAddressOf());
+//
+//	if (errorBlob != nullptr)
+//	{
+//		::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+//	}
+//	ThrowIfFailed(hr);
+//
+//	ThrowIfFailed(md3dDevice->CreateRootSignature(
+//		0,
+//		serializedRootSig->GetBufferPointer(),
+//		serializedRootSig->GetBufferSize(),
+//		IID_PPV_ARGS(mRootSignature.GetAddressOf())));
+//}
+
+
 void Game::BuildRootSignature()
 {
-	CD3DX12_DESCRIPTOR_RANGE texTable;
-	texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+	CD3DX12_DESCRIPTOR_RANGE texTable0;
+	texTable0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 0, 0);
+
+	CD3DX12_DESCRIPTOR_RANGE texTable1;
+	texTable1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 2, 0);
 
 	// Root parameter can be a table, root descriptor or root constants.
-	CD3DX12_ROOT_PARAMETER slotRootParameter[4];
+	CD3DX12_ROOT_PARAMETER slotRootParameter[5];
 
 	// Perfomance TIP: Order from most frequent to least frequent.
-	slotRootParameter[0].InitAsDescriptorTable(1, &texTable, D3D12_SHADER_VISIBILITY_PIXEL);
-	slotRootParameter[1].InitAsConstantBufferView(0);
-	slotRootParameter[2].InitAsConstantBufferView(1);
-	slotRootParameter[3].InitAsConstantBufferView(2);
+	slotRootParameter[0].InitAsConstantBufferView(0);
+	slotRootParameter[1].InitAsConstantBufferView(1);
+	slotRootParameter[2].InitAsShaderResourceView(0, 1);
+	slotRootParameter[3].InitAsDescriptorTable(1, &texTable0, D3D12_SHADER_VISIBILITY_PIXEL);
+	slotRootParameter[4].InitAsDescriptorTable(1, &texTable1, D3D12_SHADER_VISIBILITY_PIXEL);
+
 
 	auto staticSamplers = GetStaticSamplers();
 
 	// A root signature is an array of root parameters.
-	//The Init function of the CD3DX12_ROOT_SIGNATURE_DESC class has two parameters that allow you to
-		//define an array of so - called static samplers your application can use.
-	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(4, slotRootParameter,
-		(UINT)staticSamplers.size(), staticSamplers.data(),  //6 samplers!
+	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(5, slotRootParameter,
+		(UINT)staticSamplers.size(), staticSamplers.data(),
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
@@ -494,13 +802,92 @@ void Game::BuildRootSignature()
 
 //Once a texture resource is created, we need to create an SRV descriptor to it which we
 //can set to a root signature parameter slot for use by the shader programs.
+//void Game::BuildDescriptorHeaps()
+//{
+//	//
+//	// Create the SRV heap.
+//	//
+//	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
+//	srvHeapDesc.NumDescriptors = 5;/// was a 3, was a 5
+//	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+//	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+//	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mSrvDescriptorHeap)));
+//
+//	//
+//	// Fill out the heap with actual descriptors.
+//	//
+//	CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(mSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+//
+//	auto EagleTex = mTextures["EagleTex"]->Resource;
+//	auto RaptorTex = mTextures["RaptorTex"]->Resource;
+//	auto DesertTex = mTextures["DesertTex"]->Resource;
+//	auto RaptorShadowTex = mTextures["RaptorShadowTex"]->Resource;
+//	auto EagleShadowTex = mTextures["EagleShadowTex"]->Resource;
+//	//auto skyCubeMapTex = mTextures["skyCubeMapTex"]->Resource; // add 4 sky
+//
+//	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+//
+//	//This mapping enables the shader resource view (SRV) to choose how memory gets routed to the 4 return components in a shader after a memory fetch.
+//	//When a texture is sampled in a shader, it will return a vector of the texture data at the specified texture coordinates.
+//	//This field provides a way to reorder the vector components returned when sampling the texture.
+//	//D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING  will not reorder the components and just return the data in the order it is stored in the texture resource.
+//	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+//
+//	srvDesc.Format = EagleTex->GetDesc().Format;
+//
+//	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+//	srvDesc.Texture2D.MostDetailedMip = 0;
+//	//The number of mipmap levels to view, starting at MostDetailedMip.This field, along with MostDetailedMip allows us to
+//	//specify a subrange of mipmap levels to view.You can specify - 1 to indicate to view
+//	//all mipmap levels from MostDetailedMip down to the last mipmap level.
+//
+//	srvDesc.Texture2D.MipLevels = EagleTex->GetDesc().MipLevels;
+//
+//	//Specifies the minimum mipmap level that can be accessed. 0.0 means all the mipmap levels can be accessed.
+//	//Specifying 3.0 means mipmap levels 3.0 to MipCount - 1 can be accessed.
+//	srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+//
+//	md3dDevice->CreateShaderResourceView(EagleTex.Get(), &srvDesc, hDescriptor);
+//
+//	//Raptor Descriptor
+//	hDescriptor.Offset(1, mCbvSrvDescriptorSize);
+//	srvDesc.Format = RaptorTex->GetDesc().Format;
+//	md3dDevice->CreateShaderResourceView(RaptorTex.Get(), &srvDesc, hDescriptor);
+//
+//	//Desert Descriptor
+//	hDescriptor.Offset(1, mCbvSrvDescriptorSize);
+//	srvDesc.Format = DesertTex->GetDesc().Format;
+//	md3dDevice->CreateShaderResourceView(DesertTex.Get(), &srvDesc, hDescriptor);
+//
+//	//// RaptorShadowTex
+//	hDescriptor.Offset(1, mCbvSrvDescriptorSize);
+//	srvDesc.Format = RaptorShadowTex->GetDesc().Format;
+//	md3dDevice->CreateShaderResourceView(RaptorShadowTex.Get(), &srvDesc, hDescriptor);
+//	
+//	//// EagleShadowTex
+//	hDescriptor.Offset(1, mCbvSrvDescriptorSize);
+//	srvDesc.Format = EagleShadowTex->GetDesc().Format;
+//	md3dDevice->CreateShaderResourceView(EagleShadowTex.Get(), &srvDesc, hDescriptor);
+//
+//	//// skyCubeMapTexTex, add 4 sky
+//	//hDescriptor.Offset(1, mCbvSrvDescriptorSize);
+//	//srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+//	//srvDesc.TextureCube.MostDetailedMip = 0;
+//	//srvDesc.TextureCube.MipLevels = skyCubeMapTex->GetDesc().MipLevels;
+//	//srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+//	//srvDesc.Format = skyCubeMapTex->GetDesc().Format;
+//	//md3dDevice->CreateShaderResourceView(skyCubeMapTex.Get(), &srvDesc, hDescriptor);
+//
+//	//mSkyTexHeapIndex = 3;
+//
+//}
 void Game::BuildDescriptorHeaps()
 {
 	//
 	// Create the SRV heap.
 	//
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.NumDescriptors = 5;/// was a 3, was a 5
+	srvHeapDesc.NumDescriptors = 20;//14
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mSrvDescriptorHeap)));
@@ -510,87 +897,125 @@ void Game::BuildDescriptorHeaps()
 	//
 	CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(mSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
-	auto EagleTex = mTextures["EagleTex"]->Resource;
-	auto RaptorTex = mTextures["RaptorTex"]->Resource;
-	auto DesertTex = mTextures["DesertTex"]->Resource;
-	auto RaptorShadowTex = mTextures["RaptorShadowTex"]->Resource;
-	auto EagleShadowTex = mTextures["EagleShadowTex"]->Resource;
-	//auto skyCubeMapTex = mTextures["skyCubeMapTex"]->Resource; // add 4 sky
+	std::vector<ComPtr<ID3D12Resource>> tex2DList =
+	{
+		mTextures["EagleTex"]->Resource,
+		mTextures["EagleNorTex"]->Resource,
+		mTextures["RaptorTex"]->Resource,
+		mTextures["RaptorNorTex"]->Resource,
+		mTextures["DesertTex"]->Resource,
+		mTextures["DesertNorTex"]->Resource,
+		mTextures["RaptorShadowTex"]->Resource,
+		mTextures["RaptorNorShadowTex"]->Resource,
+		mTextures["EagleShadowTex"]->Resource,
+		mTextures["EagleNorShadowTex"]->Resource,
+		mTextures["DefaultDiffuseMap"]->Resource,
+		mTextures["DefaultNormalMap"]->Resource
+		
+	};
+
+	auto CubemapTex = mTextures["CubemapTex"]->Resource;
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-
-	//This mapping enables the shader resource view (SRV) to choose how memory gets routed to the 4 return components in a shader after a memory fetch.
-	//When a texture is sampled in a shader, it will return a vector of the texture data at the specified texture coordinates.
-	//This field provides a way to reorder the vector components returned when sampling the texture.
-	//D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING  will not reorder the components and just return the data in the order it is stored in the texture resource.
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
-	srvDesc.Format = EagleTex->GetDesc().Format;
-
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MostDetailedMip = 0;
-	//The number of mipmap levels to view, starting at MostDetailedMip.This field, along with MostDetailedMip allows us to
-	//specify a subrange of mipmap levels to view.You can specify - 1 to indicate to view
-	//all mipmap levels from MostDetailedMip down to the last mipmap level.
+	srvDesc.Texture2D.ResourceMinLODClamp = 0;
 
-	srvDesc.Texture2D.MipLevels = EagleTex->GetDesc().MipLevels;
+	for (UINT i = 0; i < (UINT)tex2DList.size(); ++i)
+	{
+		srvDesc.Format = tex2DList[i]->GetDesc().Format;
+		srvDesc.Texture2D.MipLevels = tex2DList[i]->GetDesc().MipLevels;
+		md3dDevice->CreateShaderResourceView(tex2DList[i].Get(), &srvDesc, hDescriptor);
 
-	//Specifies the minimum mipmap level that can be accessed. 0.0 means all the mipmap levels can be accessed.
-	//Specifying 3.0 means mipmap levels 3.0 to MipCount - 1 can be accessed.
+		// next descriptor
+		hDescriptor.Offset(1, mCbvSrvUavDescriptorSize);
+	}
+
+	// Cubemap
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+	srvDesc.TextureCube.MostDetailedMip = 0;
+	srvDesc.TextureCube.MipLevels = CubemapTex->GetDesc().MipLevels;
+	srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+	srvDesc.Format = CubemapTex->GetDesc().Format;
+	md3dDevice->CreateShaderResourceView(CubemapTex.Get(), &srvDesc, hDescriptor);
+
+	mSkyTexHeapIndex = (UINT)tex2DList.size();
+	mShadowMapHeapIndex = mSkyTexHeapIndex + 1;
+
+	mNullCubeSrvIndex = mShadowMapHeapIndex + 1;
+	mNullTexSrvIndex = mNullCubeSrvIndex + 1;
+
+	auto srvCpuStart = mSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	auto srvGpuStart = mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	auto dsvCpuStart = mDsvHeap->GetCPUDescriptorHandleForHeapStart();
+
+
+	auto nullSrv = CD3DX12_CPU_DESCRIPTOR_HANDLE(srvCpuStart, mNullCubeSrvIndex, mCbvSrvUavDescriptorSize);
+	mNullSrv = CD3DX12_GPU_DESCRIPTOR_HANDLE(srvGpuStart, mNullCubeSrvIndex, mCbvSrvUavDescriptorSize);
+
+	md3dDevice->CreateShaderResourceView(nullptr, &srvDesc, nullSrv);
+	nullSrv.Offset(1, mCbvSrvUavDescriptorSize);
+
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	srvDesc.Texture2D.MipLevels = 1;
 	srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+	md3dDevice->CreateShaderResourceView(nullptr, &srvDesc, nullSrv);
 
-	md3dDevice->CreateShaderResourceView(EagleTex.Get(), &srvDesc, hDescriptor);
-
-	//Raptor Descriptor
-	hDescriptor.Offset(1, mCbvSrvDescriptorSize);
-	srvDesc.Format = RaptorTex->GetDesc().Format;
-	md3dDevice->CreateShaderResourceView(RaptorTex.Get(), &srvDesc, hDescriptor);
-
-	//Desert Descriptor
-	hDescriptor.Offset(1, mCbvSrvDescriptorSize);
-	srvDesc.Format = DesertTex->GetDesc().Format;
-	md3dDevice->CreateShaderResourceView(DesertTex.Get(), &srvDesc, hDescriptor);
-
-	//// RaptorShadowTex
-	hDescriptor.Offset(1, mCbvSrvDescriptorSize);
-	srvDesc.Format = RaptorShadowTex->GetDesc().Format;
-	md3dDevice->CreateShaderResourceView(RaptorShadowTex.Get(), &srvDesc, hDescriptor);
-	
-	//// EagleShadowTex
-	hDescriptor.Offset(1, mCbvSrvDescriptorSize);
-	srvDesc.Format = EagleShadowTex->GetDesc().Format;
-	md3dDevice->CreateShaderResourceView(EagleShadowTex.Get(), &srvDesc, hDescriptor);
-
-	//// skyCubeMapTexTex, add 4 sky
-	//hDescriptor.Offset(1, mCbvSrvDescriptorSize);
-	//srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-	//srvDesc.TextureCube.MostDetailedMip = 0;
-	//srvDesc.TextureCube.MipLevels = skyCubeMapTex->GetDesc().MipLevels;
-	//srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
-	//srvDesc.Format = skyCubeMapTex->GetDesc().Format;
-	//md3dDevice->CreateShaderResourceView(skyCubeMapTex.Get(), &srvDesc, hDescriptor);
-
-	//mSkyTexHeapIndex = 3;
-
+	mShadowMap->BuildDescriptors(
+		CD3DX12_CPU_DESCRIPTOR_HANDLE(srvCpuStart, mShadowMapHeapIndex, mCbvSrvUavDescriptorSize),
+		CD3DX12_GPU_DESCRIPTOR_HANDLE(srvGpuStart, mShadowMapHeapIndex, mCbvSrvUavDescriptorSize),
+		CD3DX12_CPU_DESCRIPTOR_HANDLE(dsvCpuStart, 1, mDsvDescriptorSize));
 }
 
+//void Game::BuildShadersAndInputLayout()
+//{
+//
+//	mShaders["standardVS"] = d3dUtil::CompileShader(L"Shaders/Default.hlsl", nullptr, "VS", "vs_5_1");
+//	mShaders["opaquePS"] = d3dUtil::CompileShader(L"Shaders/Default.hlsl", nullptr, "PS", "ps_5_1");
+//
+//	// add 4 sky
+//	//mShaders["skyVS"] = d3dUtil::CompileShader(L"Shaders\\Sky.hlsl", nullptr, "VS", "vs_5_1");// add 4 sky
+//	//mShaders["skyPS"] = d3dUtil::CompileShader(L"Shaders\\Sky.hlsl", nullptr, "PS", "ps_5_1");// add 4 sky
+//
+//	mInputLayout =
+//	{
+//		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+//		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+//		//step3
+//		//The texture coordinates determine what part of the texture gets mapped on the triangles.
+//		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+//	};
+//}
 void Game::BuildShadersAndInputLayout()
 {
+	const D3D_SHADER_MACRO alphaTestDefines[] =
+	{
+		"ALPHA_TEST", "1",
+		NULL, NULL
+	};
 
-	mShaders["standardVS"] = d3dUtil::CompileShader(L"Shaders/Default.hlsl", nullptr, "VS", "vs_5_1");
-	mShaders["opaquePS"] = d3dUtil::CompileShader(L"Shaders/Default.hlsl", nullptr, "PS", "ps_5_1");
+	mShaders["standardVS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", nullptr, "VS", "vs_5_1");
+	mShaders["opaquePS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", nullptr, "PS", "ps_5_1");
 
-	// add 4 sky
-	//mShaders["skyVS"] = d3dUtil::CompileShader(L"Shaders\\Sky.hlsl", nullptr, "VS", "vs_5_1");// add 4 sky
-	//mShaders["skyPS"] = d3dUtil::CompileShader(L"Shaders\\Sky.hlsl", nullptr, "PS", "ps_5_1");// add 4 sky
+	//mShaders["shadowVS"] = d3dUtil::CompileShader(L"Shaders\\Shadows.hlsl", nullptr, "VS", "vs_5_1");
+	//mShaders["shadowOpaquePS"] = d3dUtil::CompileShader(L"Shaders\\Shadows.hlsl", nullptr, "PS", "ps_5_1");
+	//mShaders["shadowAlphaTestedPS"] = d3dUtil::CompileShader(L"Shaders\\Shadows.hlsl", alphaTestDefines, "PS", "ps_5_1");
+
+	//mShaders["debugVS"] = d3dUtil::CompileShader(L"Shaders\\ShadowDebug.hlsl", nullptr, "VS", "vs_5_1");
+	//mShaders["debugPS"] = d3dUtil::CompileShader(L"Shaders\\ShadowDebug.hlsl", nullptr, "PS", "ps_5_1");
+
+	//mShaders["skyVS"] = d3dUtil::CompileShader(L"Shaders\\Sky.hlsl", nullptr, "VS", "vs_5_1");
+	//mShaders["skyPS"] = d3dUtil::CompileShader(L"Shaders\\Sky.hlsl", nullptr, "PS", "ps_5_1");
 
 	mInputLayout =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		//step3
-		//The texture coordinates determine what part of the texture gets mapped on the triangles.
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 	};
 }
 
@@ -643,6 +1068,129 @@ void Game::BuildShadersAndInputLayout()
 //	mGeometries[geo->Name] = std::move(geo);
 //}
 
+//void Game::BuildShapeGeometry()
+//{
+//	GeometryGenerator geoGen;
+//	GeometryGenerator::MeshData box = geoGen.CreateBox(1.0f, 0.0f, 1.0f, 1);
+//	GeometryGenerator::MeshData grid = geoGen.CreateGrid(20.0f, 30.0f, 60, 40);
+//	GeometryGenerator::MeshData sphere = geoGen.CreateSphere(0.5f, 20, 20);
+//	GeometryGenerator::MeshData cylinder = geoGen.CreateCylinder(0.5f, 0.3f, 3.0f, 20, 20);
+//
+//	//
+//	// We are concatenating all the geometry into one big vertex/index buffer.  So
+//	// define the regions in the buffer each submesh covers.
+//	//
+//
+//	// Cache the vertex offsets to each object in the concatenated vertex buffer.
+//	UINT boxVertexOffset = 0;
+//	UINT gridVertexOffset = (UINT)box.Vertices.size();
+//	UINT sphereVertexOffset = gridVertexOffset + (UINT)grid.Vertices.size();
+//	UINT cylinderVertexOffset = sphereVertexOffset + (UINT)sphere.Vertices.size();
+//
+//	// Cache the starting index for each object in the concatenated index buffer.
+//	UINT boxIndexOffset = 0;
+//	UINT gridIndexOffset = (UINT)box.Indices32.size();
+//	UINT sphereIndexOffset = gridIndexOffset + (UINT)grid.Indices32.size();
+//	UINT cylinderIndexOffset = sphereIndexOffset + (UINT)sphere.Indices32.size();
+//
+//	SubmeshGeometry boxSubmesh;
+//	boxSubmesh.IndexCount = (UINT)box.Indices32.size();
+//	boxSubmesh.StartIndexLocation = boxIndexOffset;
+//	boxSubmesh.BaseVertexLocation = boxVertexOffset;
+//
+//	SubmeshGeometry gridSubmesh;
+//	gridSubmesh.IndexCount = (UINT)grid.Indices32.size();
+//	gridSubmesh.StartIndexLocation = gridIndexOffset;
+//	gridSubmesh.BaseVertexLocation = gridVertexOffset;
+//
+//	SubmeshGeometry sphereSubmesh;
+//	sphereSubmesh.IndexCount = (UINT)sphere.Indices32.size();
+//	sphereSubmesh.StartIndexLocation = sphereIndexOffset;
+//	sphereSubmesh.BaseVertexLocation = sphereVertexOffset;
+//
+//	SubmeshGeometry cylinderSubmesh;
+//	cylinderSubmesh.IndexCount = (UINT)cylinder.Indices32.size();
+//	cylinderSubmesh.StartIndexLocation = cylinderIndexOffset;
+//	cylinderSubmesh.BaseVertexLocation = cylinderVertexOffset;
+//
+//	//
+//	// Extract the vertex elements we are interested in and pack the
+//	// vertices of all the meshes into one vertex buffer.
+//	//
+//
+//	auto totalVertexCount =
+//		box.Vertices.size() +
+//		grid.Vertices.size() +
+//		sphere.Vertices.size() +
+//		cylinder.Vertices.size();
+//
+//	std::vector<Vertex> vertices(totalVertexCount);
+//
+//	UINT k = 0;
+//	for (size_t i = 0; i < box.Vertices.size(); ++i, ++k)
+//	{
+//		vertices[k].Pos = box.Vertices[i].Position;
+//		vertices[k].Normal = box.Vertices[i].Normal;
+//		vertices[k].TexC = box.Vertices[i].TexC;
+//	}
+//
+//	for (size_t i = 0; i < grid.Vertices.size(); ++i, ++k)
+//	{
+//		vertices[k].Pos = grid.Vertices[i].Position;
+//		vertices[k].Normal = grid.Vertices[i].Normal;
+//		vertices[k].TexC = grid.Vertices[i].TexC;
+//	}
+//
+//	for (size_t i = 0; i < sphere.Vertices.size(); ++i, ++k)
+//	{
+//		vertices[k].Pos = sphere.Vertices[i].Position;
+//		vertices[k].Normal = sphere.Vertices[i].Normal;
+//		vertices[k].TexC = sphere.Vertices[i].TexC;
+//	}
+//
+//	for (size_t i = 0; i < cylinder.Vertices.size(); ++i, ++k)
+//	{
+//		vertices[k].Pos = cylinder.Vertices[i].Position;
+//		vertices[k].Normal = cylinder.Vertices[i].Normal;
+//		vertices[k].TexC = cylinder.Vertices[i].TexC;
+//	}
+//
+//	std::vector<std::uint16_t> indices;
+//	indices.insert(indices.end(), std::begin(box.GetIndices16()), std::end(box.GetIndices16()));
+//	indices.insert(indices.end(), std::begin(grid.GetIndices16()), std::end(grid.GetIndices16()));
+//	indices.insert(indices.end(), std::begin(sphere.GetIndices16()), std::end(sphere.GetIndices16()));
+//	indices.insert(indices.end(), std::begin(cylinder.GetIndices16()), std::end(cylinder.GetIndices16()));
+//
+//	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
+//	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
+//
+//	auto geo = std::make_unique<MeshGeometry>();
+//	geo->Name = "shapeGeo";
+//
+//	ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
+//	CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
+//
+//	ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
+//	CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
+//
+//	geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
+//		mCommandList.Get(), vertices.data(), vbByteSize, geo->VertexBufferUploader);
+//
+//	geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
+//		mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
+//
+//	geo->VertexByteStride = sizeof(Vertex);
+//	geo->VertexBufferByteSize = vbByteSize;
+//	geo->IndexFormat = DXGI_FORMAT_R16_UINT;
+//	geo->IndexBufferByteSize = ibByteSize;
+//
+//	geo->DrawArgs["box"] = boxSubmesh;
+//	geo->DrawArgs["grid"] = gridSubmesh;
+//	geo->DrawArgs["sphere"] = sphereSubmesh;
+//	geo->DrawArgs["cylinder"] = cylinderSubmesh;
+//
+//	mGeometries[geo->Name] = std::move(geo);
+//}
 void Game::BuildShapeGeometry()
 {
 	GeometryGenerator geoGen;
@@ -650,6 +1198,7 @@ void Game::BuildShapeGeometry()
 	GeometryGenerator::MeshData grid = geoGen.CreateGrid(20.0f, 30.0f, 60, 40);
 	GeometryGenerator::MeshData sphere = geoGen.CreateSphere(0.5f, 20, 20);
 	GeometryGenerator::MeshData cylinder = geoGen.CreateCylinder(0.5f, 0.3f, 3.0f, 20, 20);
+	GeometryGenerator::MeshData quad = geoGen.CreateQuad(0.0f, 0.0f, 1.0f, 1.0f, 0.0f);
 
 	//
 	// We are concatenating all the geometry into one big vertex/index buffer.  So
@@ -661,12 +1210,14 @@ void Game::BuildShapeGeometry()
 	UINT gridVertexOffset = (UINT)box.Vertices.size();
 	UINT sphereVertexOffset = gridVertexOffset + (UINT)grid.Vertices.size();
 	UINT cylinderVertexOffset = sphereVertexOffset + (UINT)sphere.Vertices.size();
+	UINT quadVertexOffset = cylinderVertexOffset + (UINT)cylinder.Vertices.size();
 
 	// Cache the starting index for each object in the concatenated index buffer.
 	UINT boxIndexOffset = 0;
 	UINT gridIndexOffset = (UINT)box.Indices32.size();
 	UINT sphereIndexOffset = gridIndexOffset + (UINT)grid.Indices32.size();
 	UINT cylinderIndexOffset = sphereIndexOffset + (UINT)sphere.Indices32.size();
+	UINT quadIndexOffset = cylinderIndexOffset + (UINT)cylinder.Indices32.size();
 
 	SubmeshGeometry boxSubmesh;
 	boxSubmesh.IndexCount = (UINT)box.Indices32.size();
@@ -688,6 +1239,11 @@ void Game::BuildShapeGeometry()
 	cylinderSubmesh.StartIndexLocation = cylinderIndexOffset;
 	cylinderSubmesh.BaseVertexLocation = cylinderVertexOffset;
 
+	SubmeshGeometry quadSubmesh;
+	quadSubmesh.IndexCount = (UINT)quad.Indices32.size();
+	quadSubmesh.StartIndexLocation = quadIndexOffset;
+	quadSubmesh.BaseVertexLocation = quadVertexOffset;
+
 	//
 	// Extract the vertex elements we are interested in and pack the
 	// vertices of all the meshes into one vertex buffer.
@@ -697,16 +1253,21 @@ void Game::BuildShapeGeometry()
 		box.Vertices.size() +
 		grid.Vertices.size() +
 		sphere.Vertices.size() +
-		cylinder.Vertices.size();
+		cylinder.Vertices.size() +
+		quad.Vertices.size();
 
 	std::vector<Vertex> vertices(totalVertexCount);
 
 	UINT k = 0;
 	for (size_t i = 0; i < box.Vertices.size(); ++i, ++k)
 	{
-		vertices[k].Pos = box.Vertices[i].Position;
+		auto& p = box.Vertices[i].Position;
+		vertices[k].Pos = p;
+		vertices[k].Pos.y = 0.6;
+
 		vertices[k].Normal = box.Vertices[i].Normal;
 		vertices[k].TexC = box.Vertices[i].TexC;
+		vertices[k].TangentU = box.Vertices[i].TangentU;
 	}
 
 	for (size_t i = 0; i < grid.Vertices.size(); ++i, ++k)
@@ -714,6 +1275,7 @@ void Game::BuildShapeGeometry()
 		vertices[k].Pos = grid.Vertices[i].Position;
 		vertices[k].Normal = grid.Vertices[i].Normal;
 		vertices[k].TexC = grid.Vertices[i].TexC;
+		vertices[k].TangentU = grid.Vertices[i].TangentU;
 	}
 
 	for (size_t i = 0; i < sphere.Vertices.size(); ++i, ++k)
@@ -721,6 +1283,7 @@ void Game::BuildShapeGeometry()
 		vertices[k].Pos = sphere.Vertices[i].Position;
 		vertices[k].Normal = sphere.Vertices[i].Normal;
 		vertices[k].TexC = sphere.Vertices[i].TexC;
+		vertices[k].TangentU = sphere.Vertices[i].TangentU;
 	}
 
 	for (size_t i = 0; i < cylinder.Vertices.size(); ++i, ++k)
@@ -728,6 +1291,15 @@ void Game::BuildShapeGeometry()
 		vertices[k].Pos = cylinder.Vertices[i].Position;
 		vertices[k].Normal = cylinder.Vertices[i].Normal;
 		vertices[k].TexC = cylinder.Vertices[i].TexC;
+		vertices[k].TangentU = cylinder.Vertices[i].TangentU;
+	}
+
+	for (int i = 0; i < quad.Vertices.size(); ++i, ++k)
+	{
+		vertices[k].Pos = quad.Vertices[i].Position;
+		vertices[k].Normal = quad.Vertices[i].Normal;
+		vertices[k].TexC = quad.Vertices[i].TexC;
+		vertices[k].TangentU = quad.Vertices[i].TangentU;
 	}
 
 	std::vector<std::uint16_t> indices;
@@ -735,6 +1307,7 @@ void Game::BuildShapeGeometry()
 	indices.insert(indices.end(), std::begin(grid.GetIndices16()), std::end(grid.GetIndices16()));
 	indices.insert(indices.end(), std::begin(sphere.GetIndices16()), std::end(sphere.GetIndices16()));
 	indices.insert(indices.end(), std::begin(cylinder.GetIndices16()), std::end(cylinder.GetIndices16()));
+	indices.insert(indices.end(), std::begin(quad.GetIndices16()), std::end(quad.GetIndices16()));
 
 	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
 	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
@@ -763,10 +1336,11 @@ void Game::BuildShapeGeometry()
 	geo->DrawArgs["grid"] = gridSubmesh;
 	geo->DrawArgs["sphere"] = sphereSubmesh;
 	geo->DrawArgs["cylinder"] = cylinderSubmesh;
+	geo->DrawArgs["quad"] = quadSubmesh;
 
 	mGeometries[geo->Name] = std::move(geo);
 }
-
+//
 void Game::BuildPSOs()
 {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC opaquePsoDesc;
@@ -797,34 +1371,10 @@ void Game::BuildPSOs()
 	opaquePsoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
 	opaquePsoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
 	opaquePsoDesc.DSVFormat = mDepthStencilFormat;
-	//ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaquePsoDesc, IID_PPV_ARGS(&mOpaquePSO))); // change 4 sky
-	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaquePsoDesc, IID_PPV_ARGS(&mPSOs["opaque"]))); // add 4 sky
+	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaquePsoDesc, IID_PPV_ARGS(&mPSOs["opaque"])));
 
-// add 4 sky
-//
-// step5: PSO for sky.
-////
-//	D3D12_GRAPHICS_PIPELINE_STATE_DESC skyPsoDesc = opaquePsoDesc;
-//
-//	// The camera is inside the sky sphere, so just turn off culling.
-//	skyPsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-//
-//	// Make sure the depth function is LESS_EQUAL and not just LESS.  
-//	// Otherwise, the normalized depth values at z = 1 (NDC) will 
-//	// fail the depth test if the depth buffer was cleared to 1.
-//	skyPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-//	skyPsoDesc.pRootSignature = mRootSignature.Get();
-//	skyPsoDesc.VS =
-//	{
-//		reinterpret_cast<BYTE*>(mShaders["skyVS"]->GetBufferPointer()),
-//		mShaders["skyVS"]->GetBufferSize()
-//	};
-//	skyPsoDesc.PS =
-//	{
-//		reinterpret_cast<BYTE*>(mShaders["skyPS"]->GetBufferPointer()),
-//		mShaders["skyPS"]->GetBufferSize()
-//	};
-//	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&skyPsoDesc, IID_PPV_ARGS(&mPSOs["sky"])));
+
+
 }
 
 void Game::BuildFrameResources()
@@ -842,6 +1392,7 @@ void Game::BuildMaterials()
 	Eagle->Name = "Eagle";
 	Eagle->MatCBIndex = 0;
 	Eagle->DiffuseSrvHeapIndex = 0;
+	Eagle->NormalSrvHeapIndex = 1;// add for shadow
 	Eagle->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	Eagle->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
 	Eagle->Roughness = 0.2f;
@@ -851,7 +1402,8 @@ void Game::BuildMaterials()
 	auto Raptor = std::make_unique<Material>();
 	Raptor->Name = "Raptor";
 	Raptor->MatCBIndex = 1;
-	Raptor->DiffuseSrvHeapIndex = 1;
+	Raptor->DiffuseSrvHeapIndex = 2;// this was a 1
+	Raptor->NormalSrvHeapIndex = 3;// add for shadow
 	Raptor->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	Raptor->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
 	Raptor->Roughness = 0.2f;
@@ -862,6 +1414,7 @@ void Game::BuildMaterials()
 	Desert->Name = "Desert";
 	Desert->MatCBIndex = 2;
 	Desert->DiffuseSrvHeapIndex = 2;
+	Desert->NormalSrvHeapIndex = 5;// add for shadow
 	Desert->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	Desert->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
 	Desert->Roughness = 0.2f;
@@ -873,6 +1426,7 @@ void Game::BuildMaterials()
 	RaptorShadow->Name = "RaptorShadow";
 	RaptorShadow->MatCBIndex = 3;
 	RaptorShadow->DiffuseSrvHeapIndex = 3;
+	RaptorShadow->NormalSrvHeapIndex = 7;// add for shadow
 	RaptorShadow->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	RaptorShadow->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
 	RaptorShadow->Roughness = 0.2f;
@@ -883,10 +1437,23 @@ void Game::BuildMaterials()
 	EagleShadow->Name = "EagleShadow";
 	EagleShadow->MatCBIndex = 4;
 	EagleShadow->DiffuseSrvHeapIndex = 4;
+	EagleShadow->NormalSrvHeapIndex = 9;// add for shadow
 	EagleShadow->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	EagleShadow->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
 	EagleShadow->Roughness = 0.2f;
 	mMaterials["EagleShadow"] = std::move(EagleShadow);
+
+
+	auto Cubemap = std::make_unique<Material>();
+	Cubemap->Name = "Cubemap";
+	Cubemap->MatCBIndex = 3;
+	Cubemap->DiffuseSrvHeapIndex = 6;
+	Cubemap->NormalSrvHeapIndex = 11;
+	Cubemap->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	Cubemap->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
+	Cubemap->Roughness = 1.0f;
+
+	mMaterials["Cubemap"] = std::move(Cubemap);
 
 	// add 4 sky
 	//auto sky = std::make_unique<Material>();
@@ -957,7 +1524,63 @@ void Game::BuildRenderItems()
 //}
 
 //step21
-std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> Game::GetStaticSamplers()
+//std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> Game::GetStaticSamplers()
+//{
+//	// Applications usually only need a handful of samplers.  So just define them all up front
+//	// and keep them available as part of the root signature.  
+//
+//	const CD3DX12_STATIC_SAMPLER_DESC pointWrap(
+//		0, // shaderRegister
+//		D3D12_FILTER_MIN_MAG_MIP_POINT, // filter
+//		D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressU
+//		D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressV
+//		D3D12_TEXTURE_ADDRESS_MODE_WRAP); // addressW
+//
+//	const CD3DX12_STATIC_SAMPLER_DESC pointClamp(
+//		1, // shaderRegister
+//		D3D12_FILTER_MIN_MAG_MIP_POINT, // filter
+//		D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressU
+//		D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressV
+//		D3D12_TEXTURE_ADDRESS_MODE_CLAMP); // addressW
+//
+//	const CD3DX12_STATIC_SAMPLER_DESC linearWrap(
+//		2, // shaderRegister
+//		D3D12_FILTER_MIN_MAG_MIP_LINEAR, // filter
+//		D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressU
+//		D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressV
+//		D3D12_TEXTURE_ADDRESS_MODE_WRAP); // addressW
+//
+//	const CD3DX12_STATIC_SAMPLER_DESC linearClamp(
+//		3, // shaderRegister
+//		D3D12_FILTER_MIN_MAG_MIP_LINEAR, // filter
+//		D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressU
+//		D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressV
+//		D3D12_TEXTURE_ADDRESS_MODE_CLAMP); // addressW
+//
+//	const CD3DX12_STATIC_SAMPLER_DESC anisotropicWrap(
+//		4, // shaderRegister
+//		D3D12_FILTER_ANISOTROPIC, // filter
+//		D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressU
+//		D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressV
+//		D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressW
+//		0.0f,                             // mipLODBias
+//		8);                               // maxAnisotropy
+//
+//	const CD3DX12_STATIC_SAMPLER_DESC anisotropicClamp(
+//		5, // shaderRegister
+//		D3D12_FILTER_ANISOTROPIC, // filter
+//		D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressU
+//		D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressV
+//		D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressW
+//		0.0f,                              // mipLODBias
+//		8);                                // maxAnisotropy
+//
+//	return {
+//		pointWrap, pointClamp,
+//		linearWrap, linearClamp,
+//		anisotropicWrap, anisotropicClamp };
+//}
+std::array<const CD3DX12_STATIC_SAMPLER_DESC, 7> Game::GetStaticSamplers()
 {
 	// Applications usually only need a handful of samplers.  So just define them all up front
 	// and keep them available as part of the root signature.  
@@ -1008,8 +1631,22 @@ std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> Game::GetStaticSamplers()
 		0.0f,                              // mipLODBias
 		8);                                // maxAnisotropy
 
+	//step4
+	const CD3DX12_STATIC_SAMPLER_DESC shadow(
+		6, // shaderRegister
+		D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT, // filter
+		D3D12_TEXTURE_ADDRESS_MODE_BORDER,  // addressU
+		D3D12_TEXTURE_ADDRESS_MODE_BORDER,  // addressV
+		D3D12_TEXTURE_ADDRESS_MODE_BORDER,  // addressW
+		0.0f,                               // mipLODBias
+		16,                                 // maxAnisotropy
+		D3D12_COMPARISON_FUNC_LESS_EQUAL,
+		D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK);
+
 	return {
 		pointWrap, pointClamp,
 		linearWrap, linearClamp,
-		anisotropicWrap, anisotropicClamp };
+		anisotropicWrap, anisotropicClamp,
+		shadow
+	};
 }

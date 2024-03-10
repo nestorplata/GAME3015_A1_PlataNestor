@@ -1,5 +1,6 @@
 #include "World.hpp"
 #include "Player.h"
+#include "ShadowMap.h"
 
 // add 4 sky
 enum class RenderLayer : int
@@ -19,6 +20,7 @@ public:
 
 	virtual bool Initialize()override;
 private:
+	virtual void CreateRtvAndDsvDescriptorHeaps()override;// add it shadow
 	virtual void OnResize()override;
 	virtual void Update(const GameTimer& gt)override;
 	virtual void Draw(const GameTimer& gt)override;
@@ -33,7 +35,8 @@ private:
 	void UpdateCamera(const GameTimer& gt);
 	void AnimateMaterials(const GameTimer& gt);
 	void UpdateObjectCBs(const GameTimer& gt);
-	void UpdateMaterialCBs(const GameTimer& gt);
+	//void UpdateMaterialCBs(const GameTimer& gt);
+	void UpdateMaterialBuffer(const GameTimer& gt);// shadow
 	void UpdateMainPassCB(const GameTimer& gt);
 
 	//step5
@@ -52,7 +55,7 @@ private:
 	void BuildRenderItems();
 	//void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems);
 
-	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
+	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 7> GetStaticSamplers(); // it was 6
 
 private:
 
@@ -76,6 +79,37 @@ private:
 	std::unordered_map<std::string, ComPtr<ID3DBlob>> mShaders;
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
+
+
+
+	CD3DX12_GPU_DESCRIPTOR_HANDLE mNullSrv;// add it for shadows
+	UINT mSkyTexHeapIndex = 0;// add it for shadows
+	UINT mShadowMapHeapIndex = 0;// add it for shadows
+
+	UINT mNullCubeSrvIndex = 0;// add it for shadows
+	UINT mNullTexSrvIndex = 0;// add it for shadows
+
+	std::unique_ptr<ShadowMap> mShadowMap; // add it for shadows
+
+
+
+	DirectX::BoundingSphere mSceneBounds;// add it for shadows
+
+	float mLightNearZ = 0.0f;// add it for shadows
+	float mLightFarZ = 0.0f;// add it for shadows
+	XMFLOAT3 mLightPosW;
+	XMFLOAT4X4 mLightView = MathHelper::Identity4x4();// add it for shadows
+	XMFLOAT4X4 mLightProj = MathHelper::Identity4x4();
+	XMFLOAT4X4 mShadowTransform = MathHelper::Identity4x4();// add it for shadows
+
+	float mLightRotationAngle = 5.0f;// add it for shadows
+	XMFLOAT3 mBaseLightDirections[3] = {
+		XMFLOAT3(0.57735f, -0.57735f, 0.57735f),
+		XMFLOAT3(-0.57735f, -0.57735f, 0.57735f),
+		XMFLOAT3(0.0f, -0.707f, -0.707f)
+	};
+	XMFLOAT3 mRotatedLightDirections[3];// add it for shadows
+
 
 	ComPtr<ID3D12PipelineState> mOpaquePSO = nullptr;
 	std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mPSOs; // add 4 sky

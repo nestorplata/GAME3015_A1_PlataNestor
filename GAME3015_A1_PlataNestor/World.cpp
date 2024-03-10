@@ -28,41 +28,41 @@ CommandQueue& World::getCommandQueue()
 
 void World::update(const GameTimer& gt)
 {
-	const float dt = gt.DeltaTime();
+	//const float dt = gt.DeltaTime();
 
-	//mPlayerAircraft->setVelocity(0.0f,0.0f,0.0f);
+	////mPlayerAircraft->setVelocity(0.0f,0.0f,0.0f);
 
-	// add it for unput
-	while (!mCommandQueue.isEmpty())
+	//// add it for unput
+	//while (!mCommandQueue.isEmpty())
 
-	{
-		mSceneGraph->onCommand(mCommandQueue.pop(), dt);
+	//{
+	//	mSceneGraph->onCommand(mCommandQueue.pop(), dt);
 
-	}
-	//mPlayerAircraft->accelerate(0.0f, 0.0f, 0.0f);
+	//}
+	////mPlayerAircraft->accelerate(0.0f, 0.0f, 0.0f);
 
 
-	//Keep player's position inside the screen bounds, at least borderDistance units from the border
-	XMFLOAT3 position = mPlayerAircraft->getWorldPosition();
+	////Keep player's position inside the screen bounds, at least borderDistance units from the border
+	//XMFLOAT3 position = mPlayerAircraft->getWorldPosition();
 
-	if (position.x < -1.5)
-	{
-		position.x = -1.5f;
-	}
-	else if (position.x > 1.5)
-	{
-		position.x = 1.5f;
-	}
-	else if (position.z < -0.9)
-	{
-		position.z = -0.9f;
-	}
-	else if (position.z > 0.9)
-	{
-		position.z = 0.9f;
-	}
+	//if (position.x < -1.5)
+	//{
+	//	position.x = -1.5f;
+	//}
+	//else if (position.x > 1.5)
+	//{
+	//	position.x = 1.5f;
+	//}
+	//else if (position.z < -0.9)
+	//{
+	//	position.z = -0.9f;
+	//}
+	//else if (position.z > 0.9)
+	//{
+	//	position.z = 0.9f;
+	//}
 
-	mPlayerAircraft->setPosition(position.x,position.y,position.z);
+	//mPlayerAircraft->setPosition(position.x,position.y,position.z);
 
 
 
@@ -98,7 +98,7 @@ void World::update(const GameTimer& gt)
 
 
 	mSceneGraph->update(gt);
-	MoveRaptorSideToSide(gt);
+	//MoveRaptorSideToSide(gt);
 }
 
 //void World::OnPlayerInput(const GameTimer& gt)
@@ -161,26 +161,26 @@ void World::draw()
 
 void World::buildScene()
 {
-	std::unique_ptr<Aircraft> player(new Aircraft(Aircraft::Eagle, mGame));
-	mPlayerAircraft = player.get();
-	mPlayerAircraft->setPosition(0, 0.1, 0.0);
-	mPlayerAircraft->setScale(0.5, 0.5, 0.5);
-	//mPlayerAircraft->setVelocity(mScrollSpeed, 0.0, 0.0);
-	mSceneGraph->attachChild(std::move(player));
+	//std::unique_ptr<Aircraft> player(new Aircraft(Aircraft::Eagle, mGame));
+	//mPlayerAircraft = player.get();
+	//mPlayerAircraft->setPosition(0, 0.1, 0.0);
+	//mPlayerAircraft->setScale(0.5, 0.5, 0.5);
+	////mPlayerAircraft->setVelocity(mScrollSpeed, 0.0, 0.0);
+	//mSceneGraph->attachChild(std::move(player));
 
-	std::unique_ptr<Aircraft> enemy1(new Aircraft(Aircraft::Raptor, mGame));
-	mRaptor1 = enemy1.get();
-	mRaptor1->setPosition(0.5, 0.1, 1);
-	mRaptor1->setScale(0.5, 0.5, 0.5);
-	mRaptor1->setWorldRotation(0, XM_PI, 0);
-	mSceneGraph->attachChild(std::move(enemy1));
+	//std::unique_ptr<Aircraft> enemy1(new Aircraft(Aircraft::Raptor, mGame));
+	//mRaptor1 = enemy1.get();
+	//mRaptor1->setPosition(0.5, 0.1, 1);
+	//mRaptor1->setScale(0.5, 0.5, 0.5);
+	//mRaptor1->setWorldRotation(0, XM_PI, 0);
+	//mSceneGraph->attachChild(std::move(enemy1));
 
-	std::unique_ptr<Aircraft> enemy2(new Aircraft(Aircraft::Raptor, mGame));
-	mRaptor2 = enemy2.get();
-	mRaptor2->setPosition(-0.5, 0.1, 1);
-	mRaptor2->setScale(0.5, 0.5, 0.5);
-	mRaptor2->setWorldRotation(0, XM_PI, 0);
-	mSceneGraph->attachChild(std::move(enemy2));
+	//std::unique_ptr<Aircraft> enemy2(new Aircraft(Aircraft::Raptor, mGame));
+	//mRaptor2 = enemy2.get();
+	//mRaptor2->setPosition(-0.5, 0.1, 1);
+	//mRaptor2->setScale(0.5, 0.5, 0.5);
+	//mRaptor2->setWorldRotation(0, XM_PI, 0);
+	//mSceneGraph->attachChild(std::move(enemy2));
 
 
 

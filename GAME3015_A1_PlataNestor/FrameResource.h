@@ -8,10 +8,10 @@ struct ObjectConstants
 {
     DirectX::XMFLOAT4X4 World = MathHelper::Identity4x4();
 	DirectX::XMFLOAT4X4 TexTransform = MathHelper::Identity4x4();
-  //  UINT     MaterialIndex; // add 4 sky
-  //  UINT     ObjPad0;// add 4 sky
-  //  UINT     ObjPad1;// add 4 sky
-  //  UINT     ObjPad2;// add 4 sky
+	UINT     MaterialIndex;
+	UINT     ObjPad0;
+	UINT     ObjPad1;
+	UINT     ObjPad2;
 };
 
 struct PassConstants
@@ -22,6 +22,7 @@ struct PassConstants
     DirectX::XMFLOAT4X4 InvProj = MathHelper::Identity4x4();
     DirectX::XMFLOAT4X4 ViewProj = MathHelper::Identity4x4();
     DirectX::XMFLOAT4X4 InvViewProj = MathHelper::Identity4x4();
+    DirectX::XMFLOAT4X4 ShadowTransform = MathHelper::Identity4x4();
     DirectX::XMFLOAT3 EyePosW = { 0.0f, 0.0f, 0.0f };
     float cbPerObjectPad1 = 0.0f;
     DirectX::XMFLOAT2 RenderTargetSize = { 0.0f, 0.0f };
@@ -40,28 +41,27 @@ struct PassConstants
     Light Lights[MaxLights];
 };
 
-// add 4 shadow
-//struct MaterialData
-//{
-//    DirectX::XMFLOAT4 DiffuseAlbedo = { 1.0f, 1.0f, 1.0f, 1.0f };// add 4 shadow
-//    DirectX::XMFLOAT3 FresnelR0 = { 0.01f, 0.01f, 0.01f };// add 4 shadow
-//    float Roughness = 0.5f;// add 4 shadow
-//
-//    // Used in texture mapping.
-//    DirectX::XMFLOAT4X4 MatTransform = MathHelper::Identity4x4();// add 4 shadow
-//
-//    //UINT DiffuseMapIndex = 0;// add 4 shadow
-//   // UINT MaterialPad0;// add 4 shadow
-//   // UINT MaterialPad1;// add 4 shadow
-//   // UINT MaterialPad2;// add 4 shadow
-//};
+struct MaterialData
+{
+	DirectX::XMFLOAT4 DiffuseAlbedo = { 1.0f, 1.0f, 1.0f, 1.0f };
+	DirectX::XMFLOAT3 FresnelR0 = { 0.01f, 0.01f, 0.01f };
+	float Roughness = 0.5f;
+
+	// Used in texture mapping.
+	DirectX::XMFLOAT4X4 MatTransform = MathHelper::Identity4x4();
+
+	UINT DiffuseMapIndex = 0;
+	UINT NormalMapIndex = 0;
+	UINT MaterialPad1;
+	UINT MaterialPad2;
+};
 
 struct Vertex
 {
     DirectX::XMFLOAT3 Pos;
     DirectX::XMFLOAT3 Normal;
-	//step1
 	DirectX::XMFLOAT2 TexC;
+	DirectX::XMFLOAT3 TangentU;
 };
 
 // Stores the resources needed for the CPU to build the command lists
@@ -81,11 +81,10 @@ public:
 
     // We cannot update a cbuffer until the GPU is done processing the commands
     // that reference it.  So each frame needs their own cbuffers.
-   // std::unique_ptr<UploadBuffer<FrameConstants>> FrameCB = nullptr;
     std::unique_ptr<UploadBuffer<PassConstants>> PassCB = nullptr;
-    std::unique_ptr<UploadBuffer<MaterialConstants>> MaterialCB = nullptr;
-  //  std::unique_ptr<UploadBuffer<MaterialData>> MaterialBuffer = nullptr;// add 4 sky
     std::unique_ptr<UploadBuffer<ObjectConstants>> ObjectCB = nullptr;
+
+	std::unique_ptr<UploadBuffer<MaterialData>> MaterialBuffer = nullptr;
 
     // Fence value to mark commands up to this fence point.  This lets us
     // check if these frame resources are still in use by the GPU.

@@ -144,6 +144,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="SceneNode.cpp" />
+    <ClCompile Include="ShadowMap.cpp" />
     <ClCompile Include="SpriteNode.cpp" />
     <ClCompile Include="World.cpp" />
   </ItemGroup>
@@ -169,6 +170,7 @@
     <ClInclude Include="Player.h" />
     <ClInclude Include="Player.hpp" />
     <ClInclude Include="SceneNode.hpp" />
+    <ClInclude Include="ShadowMap.h" />
     <ClInclude Include="SpriteNode.h" />
     <ClInclude Include="World.hpp" />
   </ItemGroup>

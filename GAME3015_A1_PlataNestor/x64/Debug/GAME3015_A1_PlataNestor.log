@@ -1,2 +1,4 @@
-﻿  Player.cpp
+﻿  Game.cpp
+C:\Users\Owner\Documents\GitHub\hsalamat_GameEngineDevelopment2\GAME3015_A1_PlataNestorFold\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\Game.cpp(70,21): warning C4305: 'argument': truncation from 'double' to 'float'
+C:\Users\Owner\Documents\GitHub\hsalamat_GameEngineDevelopment2\GAME3015_A1_PlataNestorFold\GAME3015_A1_PlataNestor\GAME3015_A1_PlataNestor\Game.cpp(1266,23): warning C4305: '=': truncation from 'double' to 'float'
   GAME3015_A1_PlataNestor.vcxproj -> C:\Users\Owner\Documents\GitHub\hsalamat_GameEngineDevelopment2\GAME3015_A1_PlataNestorFold\GAME3015_A1_PlataNestor\x64\Debug\GAME3015_A1_PlataNestor.exe

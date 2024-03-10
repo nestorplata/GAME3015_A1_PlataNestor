@@ -1,7 +1,5 @@
 //***************************************************************************************
 // Default.hlsl 
-//
-// Default shader, currently supports lighting.
 //***************************************************************************************
 
 // Defaults for number of lights.
@@ -17,85 +15,33 @@
     #define NUM_SPOT_LIGHTS 0
 #endif
 
-// Include structures and functions for lighting.
-#include "LightingUtil.hlsl"
-
-//step14
-Texture2D    gDiffuseMap : register(t0);
-SamplerState gsamPointWrap : register(s0);
-
-//SamplerState gsamPointWrap : register(s0);
-//SamplerState gsamPointClamp : register(s1);
-//SamplerState gsamLinearWrap : register(s2);
-//SamplerState gsamLinearClamp : register(s3);
-//SamplerState gsamAnisotropicWrap : register(s4);
-//SamplerState gsamAnisotropicClamp : register(s5);
-
-
-
-
-// Constant data that varies per object.
-cbuffer cbPerObject : register(b0)
-{
-    float4x4 gWorld;
-    float4x4 gTexTransform;
-};
-
-// Constant data that varies per frame.
-cbuffer cbPass : register(b1)
-{
-    float4x4 gView;
-    float4x4 gInvView;
-    float4x4 gProj;
-    float4x4 gInvProj;
-    float4x4 gViewProj;
-    float4x4 gInvViewProj;
-    float3 gEyePosW;
-    float cbPerObjectPad1;
-    float2 gRenderTargetSize;
-    float2 gInvRenderTargetSize;
-    float gNearZ;
-    float gFarZ;
-    float gTotalTime;
-    float gDeltaTime;
-    float4 gAmbientLight;
-
-    // Indices [0, NUM_DIR_LIGHTS) are directional lights;
-    // indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
-    // indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
-    // are spot lights for a maximum of MaxLights per object.
-    Light gLights[MaxLights];
-};
-
-// Constant data that varies per material.
-cbuffer cbMaterial : register(b2)
-{
-	float4 gDiffuseAlbedo;
-    float3 gFresnelR0;
-    float  gRoughness;
-    float4x4 gMatTransform;
-};
+// Include common HLSL code.
+#include "Common.hlsl"
 
 struct VertexIn
 {
 	float3 PosL    : POSITION;
     float3 NormalL : NORMAL;
-    //step2
 	float2 TexC    : TEXCOORD;
+	float3 TangentU : TANGENT;
 };
 
 struct VertexOut
 {
 	float4 PosH    : SV_POSITION;
-    float3 PosW    : POSITION;
+    float4 ShadowPosH : POSITION0;
+    float3 PosW    : POSITION1;
     float3 NormalW : NORMAL;
-    //step15
+	float3 TangentW : TANGENT;
 	float2 TexC    : TEXCOORD;
 };
 
 VertexOut VS(VertexIn vin)
 {
 	VertexOut vout = (VertexOut)0.0f;
+
+	// Fetch the material data.
+	MaterialData matData = gMaterialData[gMaterialIndex];
 	
     // Transform to world space.
     float4 posW = mul(float4(vin.PosL, 1.0f), gWorld);
@@ -103,56 +49,87 @@ VertexOut VS(VertexIn vin)
 
     // Assumes nonuniform scaling; otherwise, need to use inverse-transpose of world matrix.
     vout.NormalW = mul(vin.NormalL, (float3x3)gWorld);
+	
+	vout.TangentW = mul(vin.TangentU, (float3x3)gWorld);
 
     // Transform to homogeneous clip space.
     vout.PosH = mul(posW, gViewProj);
 	
 	// Output vertex attributes for interpolation across triangle.
-    //step16:Texture coordinates represent 2D points in the texture plane. Thus, we can translate,
-    //rotate, and scale them like we could any otherpoint.
-    //gTexTransform and gMatTransform are variables used in the vertex shader to transform the input texture coordinates
-    //We use two separate texture transformation matrices gTexTransform and gMatTransform .
-    //Because sometimes it makes more sense for the material to transform the textures (for animated materials like water), but sometimes it makes more sense for the texture transform to be a property of the object.
+	float4 texC = mul(float4(vin.TexC, 0.0f, 1.0f), gTexTransform);
+	vout.TexC = mul(texC, matData.MatTransform).xy;
 
-    float4 texC = mul(float4(vin.TexC, 0.0f, 1.0f), gTexTransform);
-    vout.TexC = mul(texC, gMatTransform).xy;
-
+    // Generate projective tex-coords to project shadow map onto scene.
+    vout.ShadowPosH = mul(posW, gShadowTransform);
+	
     return vout;
 }
 
 float4 PS(VertexOut pin) : SV_Target
 {
-    //step17: we add a diffuse albedo texture map to specify the diffuse albedo
-    //component of our material
+	// Fetch the material data.
+	MaterialData matData = gMaterialData[gMaterialIndex];
+	float4 diffuseAlbedo = matData.DiffuseAlbedo;
+	float3 fresnelR0 = matData.FresnelR0;
+	float  roughness = matData.Roughness;
+	uint diffuseMapIndex = matData.DiffuseMapIndex;
+	uint normalMapIndex = matData.NormalMapIndex;
+	
+    // Dynamically look up the texture in the array.
+    diffuseAlbedo *= gTextureMaps[diffuseMapIndex].Sample(gsamAnisotropicWrap, pin.TexC);
 
-    float4 diffuseAlbedo = gDiffuseMap.Sample(gsamPointWrap, pin.TexC) * gDiffuseAlbedo;
-
+#ifdef ALPHA_TEST
+    // Discard pixel if texture alpha < 0.1.  We do this test as soon 
+    // as possible in the shader so that we can potentially exit the
+    // shader early, thereby skipping the rest of the shader code.
     clip(diffuseAlbedo.a - 0.1f);
-
-    //float diffuseAlbedo2 = float4(0.9f, 0.9f, 1.0f, 1.0f);
-    //float4 diffuseAlbedo = gDiffuseMap.Sample(gsamLinear, pin.TexC) * diffuseAlbedo2;
-
-    // Interpolating normal can unnormalize it, so renormalize it.
+#endif
+    clip(diffuseAlbedo.a - 0.9f);
+    
+	// Interpolating normal can unnormalize it, so renormalize it.
     pin.NormalW = normalize(pin.NormalW);
+	
+	float4 normalMapSample = gTextureMaps[normalMapIndex].Sample(gsamAnisotropicWrap, pin.TexC);
+	float3 bumpedNormalW = NormalSampleToWorldSpace(normalMapSample.rgb, pin.NormalW, pin.TangentW);
+
+	// Uncomment to turn off normal mapping.
+    //bumpedNormalW = pin.NormalW;
 
     // Vector from point being lit to eye. 
     float3 toEyeW = normalize(gEyePosW - pin.PosW);
 
-    // Light terms. Note that we are using diffuseAlbedo instead of gDiffuseAlbedo
+    // Light terms.
     float4 ambient = gAmbientLight*diffuseAlbedo;
 
-    const float shininess = 1.0f - gRoughness;
-    Material mat = { diffuseAlbedo, gFresnelR0, shininess };
-    float3 shadowFactor = 1.0f;
+	//step10:The shadow factor does not affect ambient light since that is indirect light, and it also does not affect reflective light coming from the environment map.
+    // Only the first light casts a shadow.
+    float3 shadowFactor = float3(1.0f, 1.0f, 1.0f);
+    shadowFactor[0] = CalcShadowFactor(pin.ShadowPosH);
+    
+    //Only the first light casts a shadow in our demo. If you need to get darker shadow, you will need to add:
+
+    //shadowFactor[1] = CalcShadowFactor(pin.ShadowPosH);
+    //shadowFactor[2] = CalcShadowFactor(pin.ShadowPosH);
+
+       
+    const float shininess = (1.0f - roughness) * normalMapSample.a;
+    Material mat = { diffuseAlbedo, fresnelR0, shininess };
     float4 directLight = ComputeLighting(gLights, mat, pin.PosW,
-        pin.NormalW, toEyeW, shadowFactor);
+        bumpedNormalW, toEyeW, shadowFactor);
 
     float4 litColor = ambient + directLight;
 
-    // Common convention to take alpha from diffuse material.
+	// Add in specular reflections.
+    float3 r = reflect(-toEyeW, bumpedNormalW);
+    float4 reflectionColor = gCubeMap.Sample(gsamLinearWrap, r);
+    float3 fresnelFactor = SchlickFresnel(fresnelR0, bumpedNormalW, r);
+    litColor.rgb += shininess * fresnelFactor * reflectionColor.rgb;
+	
+    // Common convention to take alpha from diffuse albedo.
     litColor.a = diffuseAlbedo.a;
 
     return litColor;
 }
+
 
 
