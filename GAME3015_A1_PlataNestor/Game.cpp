@@ -5,6 +5,8 @@ Game::Game(HINSTANCE hInstance)
 	: D3DApp(hInstance)
 	, mWorld(this)
 {
+	mSceneBounds.Center = XMFLOAT3(0.0f, 0.0f, 0.0f);// add for the shadow
+	mSceneBounds.Radius = sqrtf(10.0f * 10.0f + 15.0f * 15.0f);// add for the shadow
 }
 
 Game::~Game()
@@ -66,8 +68,8 @@ bool Game::Initialize()
 		XMStoreFloat3(&mRotatedLightDirections[i], lightDir);
 	}
 
-	mCamera.SetPosition(0, 5, 0);
-	mCamera.Pitch(3.14 / 2.2);
+	mCamera.SetPosition(0, 2, -3);
+	mCamera.Pitch(3.14 / 6 );
 
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
@@ -137,6 +139,9 @@ void Game::Update(const GameTimer& gt)
 	UpdateMaterialBuffer(gt);
 	UpdateMainPassCB(gt);
 	//ProcessEvents(gt);// add it for input
+
+	UpdateShadowPassCB(gt); // add shadow
+	UpdateShadowTransform(gt);// ad shadow
 }
 
 void Game::CreateRtvAndDsvDescriptorHeaps()
@@ -310,12 +315,12 @@ void Game::Draw(const GameTimer& gt)
 	// If we wanted to use "local" cube maps, we would have to change them per-object, or dynamically
 	// index into an array of cube maps.
 
-	//CD3DX12_GPU_DESCRIPTOR_HANDLE skyTexDescriptor(mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-	//skyTexDescriptor.Offset(mSkyTexHeapIndex, mCbvSrvUavDescriptorSize);
-	//mCommandList->SetGraphicsRootDescriptorTable(3, skyTexDescriptor);
+	CD3DX12_GPU_DESCRIPTOR_HANDLE skyTexDescriptor(mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+	skyTexDescriptor.Offset(mSkyTexHeapIndex, mCbvSrvUavDescriptorSize);
+	mCommandList->SetGraphicsRootDescriptorTable(3, skyTexDescriptor);
 
 	mWorld.draw();
-	//DrawSceneToShadowMap();
+	DrawSceneToShadowMap();
 
 	// Indicate a state transition on the resource usage.
 	auto transition2 = CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
@@ -630,46 +635,46 @@ void Game::LoadTextures()
 		DesertNorTex->Resource, DesertNorTex->UploadHeap));
 	mTextures[DesertNorTex->Name] = std::move(DesertNorTex);
 
-	//RaptorShadow
-	auto RaptorShadowTex = std::make_unique<Texture>();
-	RaptorShadowTex->Name = "RaptorShadowTex";
-	RaptorShadowTex->Filename = L"Media/Textures/RaptorShadow1.dds";
-	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
-		mCommandList.Get(), RaptorShadowTex->Filename.c_str(),
-		RaptorShadowTex->Resource, RaptorShadowTex->UploadHeap));
+	////RaptorShadow
+	//auto RaptorShadowTex = std::make_unique<Texture>();
+	//RaptorShadowTex->Name = "RaptorShadowTex";
+	//RaptorShadowTex->Filename = L"Media/Textures/RaptorShadow1.dds";
+	//ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+	//	mCommandList.Get(), RaptorShadowTex->Filename.c_str(),
+	//	RaptorShadowTex->Resource, RaptorShadowTex->UploadHeap));
 
-	mTextures[RaptorShadowTex->Name] = std::move(RaptorShadowTex);
-	
-	
-	//RaptorShadow normal
-	auto RaptorNorShadowTex = std::make_unique<Texture>();
-	RaptorNorShadowTex->Name = "RaptorNorShadowTex";
-	RaptorNorShadowTex->Filename = L"Media/Textures/RaptorShadow1NMap.dds";
-	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
-		mCommandList.Get(), RaptorNorShadowTex->Filename.c_str(),
-		RaptorNorShadowTex->Resource, RaptorNorShadowTex->UploadHeap));
+	//mTextures[RaptorShadowTex->Name] = std::move(RaptorShadowTex);
+	//
+	//
+	////RaptorShadow normal
+	//auto RaptorNorShadowTex = std::make_unique<Texture>();
+	//RaptorNorShadowTex->Name = "RaptorNorShadowTex";
+	//RaptorNorShadowTex->Filename = L"Media/Textures/RaptorShadow1NMap.dds";
+	//ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+	//	mCommandList.Get(), RaptorNorShadowTex->Filename.c_str(),
+	//	RaptorNorShadowTex->Resource, RaptorNorShadowTex->UploadHeap));
 
-	mTextures[RaptorNorShadowTex->Name] = std::move(RaptorNorShadowTex);
+	//mTextures[RaptorNorShadowTex->Name] = std::move(RaptorNorShadowTex);
 
-	// EagleShadow
-	auto EagleShadowTex = std::make_unique<Texture>();
-	EagleShadowTex->Name = "EagleShadowTex";
-	EagleShadowTex->Filename = L"Media/Textures/EagleShadow1.dds";
-	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
-		mCommandList.Get(), EagleShadowTex->Filename.c_str(),
-		EagleShadowTex->Resource, EagleShadowTex->UploadHeap));
+	//// EagleShadow
+	//auto EagleShadowTex = std::make_unique<Texture>();
+	//EagleShadowTex->Name = "EagleShadowTex";
+	//EagleShadowTex->Filename = L"Media/Textures/EagleShadow1.dds";
+	//ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+	//	mCommandList.Get(), EagleShadowTex->Filename.c_str(),
+	//	EagleShadowTex->Resource, EagleShadowTex->UploadHeap));
 
-	mTextures[EagleShadowTex->Name] = std::move(EagleShadowTex);
-	
-	// EagleShadow normal
-	auto EagleNorShadowTex = std::make_unique<Texture>();
-	EagleNorShadowTex->Name = "EagleNorShadowTex";
-	EagleNorShadowTex->Filename = L"Media/Textures/EagleShadow1NMap.dds";
-	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
-		mCommandList.Get(), EagleNorShadowTex->Filename.c_str(),
-		EagleNorShadowTex->Resource, EagleNorShadowTex->UploadHeap));
+	//mTextures[EagleShadowTex->Name] = std::move(EagleShadowTex);
+	//
+	//// EagleShadow normal
+	//auto EagleNorShadowTex = std::make_unique<Texture>();
+	//EagleNorShadowTex->Name = "EagleNorShadowTex";
+	//EagleNorShadowTex->Filename = L"Media/Textures/EagleShadow1NMap.dds";
+	//ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+	//	mCommandList.Get(), EagleNorShadowTex->Filename.c_str(),
+	//	EagleNorShadowTex->Resource, EagleNorShadowTex->UploadHeap));
 
-	mTextures[EagleNorShadowTex->Name] = std::move(EagleNorShadowTex);
+	//mTextures[EagleNorShadowTex->Name] = std::move(EagleNorShadowTex);
 
 	//Cubemap default deffuse cubemap
 	auto DefaultDiffuseMap = std::make_unique<Texture>();
@@ -887,7 +892,7 @@ void Game::BuildDescriptorHeaps()
 	// Create the SRV heap.
 	//
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.NumDescriptors = 20;//14
+	srvHeapDesc.NumDescriptors = 14;//14
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mSrvDescriptorHeap)));
@@ -905,10 +910,10 @@ void Game::BuildDescriptorHeaps()
 		mTextures["RaptorNorTex"]->Resource,
 		mTextures["DesertTex"]->Resource,
 		mTextures["DesertNorTex"]->Resource,
-		mTextures["RaptorShadowTex"]->Resource,
-		mTextures["RaptorNorShadowTex"]->Resource,
-		mTextures["EagleShadowTex"]->Resource,
-		mTextures["EagleNorShadowTex"]->Resource,
+		//mTextures["RaptorShadowTex"]->Resource,
+		//mTextures["RaptorNorShadowTex"]->Resource,
+		//mTextures["EagleShadowTex"]->Resource,
+		//mTextures["EagleNorShadowTex"]->Resource,
 		mTextures["DefaultDiffuseMap"]->Resource,
 		mTextures["DefaultNormalMap"]->Resource
 		
@@ -1000,15 +1005,15 @@ void Game::BuildShadersAndInputLayout()
 	mShaders["standardVS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", nullptr, "VS", "vs_5_1");
 	mShaders["opaquePS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", nullptr, "PS", "ps_5_1");
 
-	//mShaders["shadowVS"] = d3dUtil::CompileShader(L"Shaders\\Shadows.hlsl", nullptr, "VS", "vs_5_1");
-	//mShaders["shadowOpaquePS"] = d3dUtil::CompileShader(L"Shaders\\Shadows.hlsl", nullptr, "PS", "ps_5_1");
-	//mShaders["shadowAlphaTestedPS"] = d3dUtil::CompileShader(L"Shaders\\Shadows.hlsl", alphaTestDefines, "PS", "ps_5_1");
+	mShaders["shadowVS"] = d3dUtil::CompileShader(L"Shaders\\Shadows.hlsl", nullptr, "VS", "vs_5_1");
+	mShaders["shadowOpaquePS"] = d3dUtil::CompileShader(L"Shaders\\Shadows.hlsl", nullptr, "PS", "ps_5_1");
+	mShaders["shadowAlphaTestedPS"] = d3dUtil::CompileShader(L"Shaders\\Shadows.hlsl", alphaTestDefines, "PS", "ps_5_1");
 
-	//mShaders["debugVS"] = d3dUtil::CompileShader(L"Shaders\\ShadowDebug.hlsl", nullptr, "VS", "vs_5_1");
-	//mShaders["debugPS"] = d3dUtil::CompileShader(L"Shaders\\ShadowDebug.hlsl", nullptr, "PS", "ps_5_1");
+	mShaders["debugVS"] = d3dUtil::CompileShader(L"Shaders\\ShadowDebug.hlsl", nullptr, "VS", "vs_5_1");
+	mShaders["debugPS"] = d3dUtil::CompileShader(L"Shaders\\ShadowDebug.hlsl", nullptr, "PS", "ps_5_1");
 
-	//mShaders["skyVS"] = d3dUtil::CompileShader(L"Shaders\\Sky.hlsl", nullptr, "VS", "vs_5_1");
-	//mShaders["skyPS"] = d3dUtil::CompileShader(L"Shaders\\Sky.hlsl", nullptr, "PS", "ps_5_1");
+	mShaders["skyVS"] = d3dUtil::CompileShader(L"Shaders\\Sky.hlsl", nullptr, "VS", "vs_5_1");
+	mShaders["skyPS"] = d3dUtil::CompileShader(L"Shaders\\Sky.hlsl", nullptr, "PS", "ps_5_1");
 
 	mInputLayout =
 	{
@@ -1341,6 +1346,43 @@ void Game::BuildShapeGeometry()
 	mGeometries[geo->Name] = std::move(geo);
 }
 //
+//void Game::BuildPSOs()
+//{
+//	D3D12_GRAPHICS_PIPELINE_STATE_DESC opaquePsoDesc;
+//
+//	//
+//	// PSO for opaque objects.
+//	//
+//	ZeroMemory(&opaquePsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+//	opaquePsoDesc.InputLayout = { mInputLayout.data(), (UINT)mInputLayout.size() };
+//	opaquePsoDesc.pRootSignature = mRootSignature.Get();
+//	opaquePsoDesc.VS =
+//	{
+//		reinterpret_cast<BYTE*>(mShaders["standardVS"]->GetBufferPointer()),
+//		mShaders["standardVS"]->GetBufferSize()
+//	};
+//	opaquePsoDesc.PS =
+//	{
+//		reinterpret_cast<BYTE*>(mShaders["opaquePS"]->GetBufferPointer()),
+//		mShaders["opaquePS"]->GetBufferSize()
+//	};
+//	opaquePsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+//	opaquePsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+//	opaquePsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+//	opaquePsoDesc.SampleMask = UINT_MAX;
+//	opaquePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+//	opaquePsoDesc.NumRenderTargets = 1;
+//	opaquePsoDesc.RTVFormats[0] = mBackBufferFormat;
+//	opaquePsoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
+//	opaquePsoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
+//	opaquePsoDesc.DSVFormat = mDepthStencilFormat;
+//	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaquePsoDesc, IID_PPV_ARGS(&mPSOs["opaque"])));
+//
+//
+//
+//}
+
+
 void Game::BuildPSOs()
 {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC opaquePsoDesc;
@@ -1373,7 +1415,71 @@ void Game::BuildPSOs()
 	opaquePsoDesc.DSVFormat = mDepthStencilFormat;
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaquePsoDesc, IID_PPV_ARGS(&mPSOs["opaque"])));
 
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC smapPsoDesc = opaquePsoDesc;
+	smapPsoDesc.RasterizerState.DepthBias = 100000;  //Change the depth bias to 1000000 => Peter Panning
+	smapPsoDesc.RasterizerState.DepthBiasClamp = 0.0f;
+	smapPsoDesc.RasterizerState.SlopeScaledDepthBias = 1.0f;
+	smapPsoDesc.pRootSignature = mRootSignature.Get();
+	smapPsoDesc.VS =
+	{
+		reinterpret_cast<BYTE*>(mShaders["shadowVS"]->GetBufferPointer()),
+		mShaders["shadowVS"]->GetBufferSize()
+	};
+	smapPsoDesc.PS =
+	{
+		reinterpret_cast<BYTE*>(mShaders["shadowOpaquePS"]->GetBufferPointer()),
+		mShaders["shadowOpaquePS"]->GetBufferSize()
 
+		/*reinterpret_cast<BYTE*>(mShaders["shadowAlphaTestedPS"]->GetBufferPointer()),
+		mShaders["shadowAlphaTestedPS"]->GetBufferSize()*/
+
+	};
+
+	smapPsoDesc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN;
+	smapPsoDesc.NumRenderTargets = 0;
+	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&smapPsoDesc, IID_PPV_ARGS(&mPSOs["shadow_opaque"])));
+
+	//
+	// PSO for debug layer.
+	//
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC debugPsoDesc = opaquePsoDesc;
+	debugPsoDesc.pRootSignature = mRootSignature.Get();
+	debugPsoDesc.VS =
+	{
+		reinterpret_cast<BYTE*>(mShaders["debugVS"]->GetBufferPointer()),
+		mShaders["debugVS"]->GetBufferSize()
+	};
+	debugPsoDesc.PS =
+	{
+		reinterpret_cast<BYTE*>(mShaders["debugPS"]->GetBufferPointer()),
+		mShaders["debugPS"]->GetBufferSize()
+	};
+	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&debugPsoDesc, IID_PPV_ARGS(&mPSOs["debug"])));
+
+	//
+	// PSO for sky.
+	//
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC skyPsoDesc = opaquePsoDesc;
+
+	// The camera is inside the sky sphere, so just turn off culling.
+	skyPsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+
+	// Make sure the depth function is LESS_EQUAL and not just LESS.  
+	// Otherwise, the normalized depth values at z = 1 (NDC) will 
+	// fail the depth test if the depth buffer was cleared to 1.
+	skyPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+	skyPsoDesc.pRootSignature = mRootSignature.Get();
+	skyPsoDesc.VS =
+	{
+		reinterpret_cast<BYTE*>(mShaders["skyVS"]->GetBufferPointer()),
+		mShaders["skyVS"]->GetBufferSize()
+	};
+	skyPsoDesc.PS =
+	{
+		reinterpret_cast<BYTE*>(mShaders["skyPS"]->GetBufferPointer()),
+		mShaders["skyPS"]->GetBufferSize()
+	};
+	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&skyPsoDesc, IID_PPV_ARGS(&mPSOs["sky"])));
 
 }
 
@@ -1413,7 +1519,7 @@ void Game::BuildMaterials()
 	auto Desert = std::make_unique<Material>();
 	Desert->Name = "Desert";
 	Desert->MatCBIndex = 2;
-	Desert->DiffuseSrvHeapIndex = 2;
+	Desert->DiffuseSrvHeapIndex = 4; // was a 2
 	Desert->NormalSrvHeapIndex = 5;// add for shadow
 	Desert->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	Desert->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
@@ -1421,34 +1527,34 @@ void Game::BuildMaterials()
 
 	mMaterials["Desert"] = std::move(Desert);
 
-	// add
-	auto RaptorShadow = std::make_unique<Material>();
-	RaptorShadow->Name = "RaptorShadow";
-	RaptorShadow->MatCBIndex = 3;
-	RaptorShadow->DiffuseSrvHeapIndex = 3;
-	RaptorShadow->NormalSrvHeapIndex = 7;// add for shadow
-	RaptorShadow->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	RaptorShadow->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
-	RaptorShadow->Roughness = 0.2f;
-	mMaterials["RaptorShadow"] = std::move(RaptorShadow);
+	//// add
+	//auto RaptorShadow = std::make_unique<Material>();
+	//RaptorShadow->Name = "RaptorShadow";
+	//RaptorShadow->MatCBIndex = 3;
+	//RaptorShadow->DiffuseSrvHeapIndex = 3;
+	//RaptorShadow->NormalSrvHeapIndex = 7;// add for shadow
+	//RaptorShadow->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	//RaptorShadow->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
+	//RaptorShadow->Roughness = 0.2f;
+	//mMaterials["RaptorShadow"] = std::move(RaptorShadow);
 
-	// add
-	auto EagleShadow = std::make_unique<Material>();
-	EagleShadow->Name = "EagleShadow";
-	EagleShadow->MatCBIndex = 4;
-	EagleShadow->DiffuseSrvHeapIndex = 4;
-	EagleShadow->NormalSrvHeapIndex = 9;// add for shadow
-	EagleShadow->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	EagleShadow->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
-	EagleShadow->Roughness = 0.2f;
-	mMaterials["EagleShadow"] = std::move(EagleShadow);
+	//// add
+	//auto EagleShadow = std::make_unique<Material>();
+	//EagleShadow->Name = "EagleShadow";
+	//EagleShadow->MatCBIndex = 4;
+	//EagleShadow->DiffuseSrvHeapIndex = 4;
+	//EagleShadow->NormalSrvHeapIndex = 9;// add for shadow
+	//EagleShadow->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	//EagleShadow->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
+	//EagleShadow->Roughness = 0.2f;
+	//mMaterials["EagleShadow"] = std::move(EagleShadow);
 
 
 	auto Cubemap = std::make_unique<Material>();
 	Cubemap->Name = "Cubemap";
 	Cubemap->MatCBIndex = 3;
 	Cubemap->DiffuseSrvHeapIndex = 6;
-	Cubemap->NormalSrvHeapIndex = 11;
+	Cubemap->NormalSrvHeapIndex = 7;// 11
 	Cubemap->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	Cubemap->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
 	Cubemap->Roughness = 1.0f;
@@ -1580,6 +1686,150 @@ void Game::BuildRenderItems()
 //		linearWrap, linearClamp,
 //		anisotropicWrap, anisotropicClamp };
 //}
+
+
+
+void Game::DrawSceneToShadowMap()
+{
+
+	auto vp = mShadowMap->Viewport();
+	auto sr = mShadowMap->ScissorRect();
+
+	mCommandList->RSSetViewports(1, &vp);
+	mCommandList->RSSetScissorRects(1, &sr);
+
+	// Change to DEPTH_WRITE.
+	auto transition1 = CD3DX12_RESOURCE_BARRIER::Transition(mShadowMap->Resource(),
+		D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+
+	mCommandList->ResourceBarrier(1, &transition1);
+
+	UINT passCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(PassConstants));
+
+	// Clear the back buffer and depth buffer.
+	mCommandList->ClearDepthStencilView(mShadowMap->Dsv(),
+		D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+
+	// Set null render target because we are only going to draw to
+	// depth buffer.  Setting a null render target will disable color writes.
+	// Note the active PSO also must specify a render target count of 0.
+
+	auto dsv = mShadowMap->Dsv();
+	mCommandList->OMSetRenderTargets(0, nullptr, false, &dsv);
+
+	// Bind the pass constant buffer for the shadow map pass.
+	auto passCB = mCurrFrameResource->PassCB->Resource();
+	D3D12_GPU_VIRTUAL_ADDRESS passCBAddress = passCB->GetGPUVirtualAddress() + 1 * passCBByteSize;
+	mCommandList->SetGraphicsRootConstantBufferView(1, passCBAddress);
+
+	mCommandList->SetPipelineState(mPSOs["shadow_opaque"].Get());
+
+	const std::vector<RenderItem*>& ritems = mRitemLayer[(int)RenderLayer::Opaque];
+	UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
+	auto objectCB = mCurrFrameResource->ObjectCB->Resource();
+
+	// For each render item...
+	for (size_t i = 0; i < ritems.size(); ++i)
+	{
+		auto ri = ritems[i];
+		auto vbv = ri->Geo->VertexBufferView();
+		auto ibv = ri->Geo->IndexBufferView();
+
+		mCommandList.Get()->IASetVertexBuffers(0, 1, &vbv);
+		mCommandList.Get()->IASetIndexBuffer(&ibv);
+		mCommandList.Get()->IASetPrimitiveTopology(ri->PrimitiveType);
+
+		D3D12_GPU_VIRTUAL_ADDRESS objCBAddress = objectCB->GetGPUVirtualAddress() + ri->ObjCBIndex * objCBByteSize;
+
+		mCommandList.Get()->SetGraphicsRootConstantBufferView(0, objCBAddress);
+
+		mCommandList.Get()->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
+	}
+
+
+	// Change back to GENERIC_READ so we can read the texture in a shader.
+	auto transition2 = CD3DX12_RESOURCE_BARRIER::Transition(mShadowMap->Resource(),
+		D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_GENERIC_READ);
+
+	mCommandList->ResourceBarrier(1, &transition2);
+}
+
+void Game::UpdateShadowPassCB(const GameTimer& gt)
+{
+	XMMATRIX view = XMLoadFloat4x4(&mLightView);
+	XMMATRIX proj = XMLoadFloat4x4(&mLightProj);
+
+	auto detView = XMMatrixDeterminant(view);
+	auto detProj = XMMatrixDeterminant(proj);
+
+	XMMATRIX viewProj = XMMatrixMultiply(view, proj);
+
+	auto detViewProj = XMMatrixDeterminant(viewProj);
+
+	XMMATRIX invView = XMMatrixInverse(&detView, view);
+	XMMATRIX invProj = XMMatrixInverse(&detProj, proj);
+	XMMATRIX invViewProj = XMMatrixInverse(&detViewProj, viewProj);
+
+	UINT w = mShadowMap->Width();
+	UINT h = mShadowMap->Height();
+
+	XMStoreFloat4x4(&mShadowPassCB.View, XMMatrixTranspose(view));
+	XMStoreFloat4x4(&mShadowPassCB.InvView, XMMatrixTranspose(invView));
+	XMStoreFloat4x4(&mShadowPassCB.Proj, XMMatrixTranspose(proj));
+	XMStoreFloat4x4(&mShadowPassCB.InvProj, XMMatrixTranspose(invProj));
+	XMStoreFloat4x4(&mShadowPassCB.ViewProj, XMMatrixTranspose(viewProj));
+	XMStoreFloat4x4(&mShadowPassCB.InvViewProj, XMMatrixTranspose(invViewProj));
+	mShadowPassCB.EyePosW = mLightPosW;
+	mShadowPassCB.RenderTargetSize = XMFLOAT2((float)w, (float)h);
+	mShadowPassCB.InvRenderTargetSize = XMFLOAT2(1.0f / w, 1.0f / h);
+	mShadowPassCB.NearZ = mLightNearZ;
+	mShadowPassCB.FarZ = mLightFarZ;
+
+	auto currPassCB = mCurrFrameResource->PassCB.get();
+	currPassCB->CopyData(1, mShadowPassCB);
+}
+
+void Game::UpdateShadowTransform(const GameTimer& gt)
+{
+	// Only the first "main" light casts a shadow.
+	XMVECTOR lightDir = XMLoadFloat3(&mRotatedLightDirections[0]);
+	XMVECTOR lightPos = -2.0f * mSceneBounds.Radius * lightDir;
+	XMVECTOR targetPos = XMLoadFloat3(&mSceneBounds.Center);
+	XMVECTOR lightUp = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	XMMATRIX lightView = XMMatrixLookAtLH(lightPos, targetPos, lightUp);
+
+	XMStoreFloat3(&mLightPosW, lightPos);
+
+	// Transform bounding sphere to light space.
+	XMFLOAT3 sphereCenterLS;
+	XMStoreFloat3(&sphereCenterLS, XMVector3TransformCoord(targetPos, lightView));
+
+	// Ortho frustum in light space encloses scene.
+	float l = sphereCenterLS.x - mSceneBounds.Radius;
+	float b = sphereCenterLS.y - mSceneBounds.Radius;
+	float n = sphereCenterLS.z - mSceneBounds.Radius;
+	float r = sphereCenterLS.x + mSceneBounds.Radius;
+	float t = sphereCenterLS.y + mSceneBounds.Radius;
+	float f = sphereCenterLS.z + mSceneBounds.Radius;
+
+	mLightNearZ = n;
+	mLightFarZ = f;
+	XMMATRIX lightProj = XMMatrixOrthographicOffCenterLH(l, r, b, t, n, f);
+
+	// Transform NDC space [-1,+1]^2 to texture space [0,1]^2
+	XMMATRIX T(
+		0.5f, 0.0f, 0.0f, 0.0f,
+		0.0f, -0.5f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.5f, 0.5f, 0.0f, 1.0f);
+
+	XMMATRIX S = lightView * lightProj * T;
+	XMStoreFloat4x4(&mLightView, lightView);
+	XMStoreFloat4x4(&mLightProj, lightProj);
+	XMStoreFloat4x4(&mShadowTransform, S);
+}
+
+
 std::array<const CD3DX12_STATIC_SAMPLER_DESC, 7> Game::GetStaticSamplers()
 {
 	// Applications usually only need a handful of samplers.  So just define them all up front

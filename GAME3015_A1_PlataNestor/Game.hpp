@@ -6,6 +6,7 @@
 enum class RenderLayer : int
 {
 	Opaque = 0,
+	Debug,
 	Sky,
 	Count
 };
@@ -39,6 +40,9 @@ private:
 	void UpdateMaterialBuffer(const GameTimer& gt);// shadow
 	void UpdateMainPassCB(const GameTimer& gt);
 
+	void UpdateShadowTransform(const GameTimer& gt);// shadow
+	void UpdateShadowPassCB(const GameTimer& gt);// shadow
+
 	//step5
 	void LoadTextures();
 
@@ -54,6 +58,9 @@ private:
 	void BuildMaterials();
 	void BuildRenderItems();
 	//void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems);
+	void DrawSceneToShadowMap();// shadow
+
+
 
 	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 7> GetStaticSamplers(); // it was 6
 
@@ -127,7 +134,7 @@ private:
 	std::vector<RenderItem*> mOpaqueRitems;
 
 	PassConstants mMainPassCB;
-
+	PassConstants mShadowPassCB;// index 1 of pass cbuffer.//shadow
 	//XMFLOAT3 mEyePos = { 0.0f, 0.0f, -10.0f };
 	//XMFLOAT4X4 mView = MathHelper::Identity4x4();
 	//XMFLOAT4X4 mProj = MathHelper::Identity4x4();
@@ -144,10 +151,13 @@ public:
 	std::vector<std::unique_ptr<RenderItem>>& getRenderItems() { return mAllRitems; }
 	std::unordered_map<std::string, std::unique_ptr<Material>>& getMaterials() { return mMaterials; }
 	std::unordered_map<std::string, std::unique_ptr<MeshGeometry>>& getGeometries() { return mGeometries; }
+
+	std::vector<RenderItem*> mRitemLayer[(int)RenderLayer::Count];// add it for shadow
 	std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> GetPSOs() { return mPSOs; }//  add 4 draw in scene node
 	FrameResource* getFrameResource() { return mCurrFrameResource; }//  add 4 draw in scene node
 
 	ComPtr<ID3D12DescriptorHeap> getmSrvDescriptorHeap() { return mSrvDescriptorHeap; }//  add 4 draw in scene node
+	UINT getDescriptorSize() { return mCbvSrvUavDescriptorSize; }
 	UINT GetmCbvSrvDescriptorSize() { return mCbvSrvDescriptorSize; }// add 4 draw in scene node
 };
 
