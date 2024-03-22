@@ -1,0 +1,16 @@
+
+ 
+ OurAirPlane_X: 0
+ OurAirPlane_Y: 1
+ OurAirPlane_Z: 26
+ Timerdelta: 0.018965
+
+ OurAirPlane_X: 0
+ OurAirPlane_Y: 1
+ OurAirPlane_Z: -4
+ Timerdelta: 0.019678
+
+ OurAirPlane_X: -10
+ OurAirPlane_Y: 1
+ OurAirPlane_Z: 12.264
+ Timerdelta: 0.020180
